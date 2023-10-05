@@ -400,6 +400,22 @@
   (ior (match_operand 0 "register_operand")
        (match_code "const_int")))
 
+(define_predicate "label_register_operand"
+  (ior (match_operand 0 "register_operand")
+       (match_code "label_ref")))
+
+(define_predicate "lpstart_reg_op"
+  (and (match_code "reg")
+       (match_test "REGNO (op) == LPSTART0_REGNUM || REGNO (op) == LPSTART1_REGNUM")))
+
+(define_predicate "lpend_reg_op"
+  (and (match_code "reg")
+       (match_test "REGNO (op) == LPEND0_REGNUM || REGNO (op) == LPEND1_REGNUM")))
+
+(define_predicate "lpcount_reg_op"
+  (and (match_code "reg")
+       (match_test "REGNO (op) == LPCOUNT0_REGNUM || REGNO (op) == LPCOUNT1_REGNUM")))
+
 ;; Predicates for the V extension.
 (define_special_predicate "vector_length_operand"
   (ior (match_operand 0 "pmode_register_operand")
