@@ -2105,8 +2105,8 @@
 })
 
 (define_insn "*movsi_internal"
-  [(set (match_operand:SI 0 "nonimmediate_operand" "=r,r,r, m,  *f,*f,*r,*m,r,r,r")
-	(match_operand:SI 1 "move_operand"         " r,T,m,rJ,*r*J,*m,*f,*f,vp,xcvl0c,xcvl1c"))]
+  [(set (match_operand:SI 0 "move_dest_operand" "=r,r,r, m,  *f,*f,*r,*m,r,r,r")
+	(match_operand:SI 1 "move_operand"      " r,T,m,rJ,*r*J,*m,*f,*f,vp,xcvl0c,xcvl1c"))]
   "(register_operand (operands[0], SImode)
     || reg_or_0_operand (operands[1], SImode))
     && !(register_operand (operands[1], SImode)

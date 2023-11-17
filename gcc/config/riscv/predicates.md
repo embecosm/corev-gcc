@@ -416,6 +416,15 @@
   (and (match_code "reg")
        (match_test "REGNO (op) == LPCOUNT0_REGNUM || REGNO (op) == LPCOUNT1_REGNUM")))
 
+;; The instructions to set hardware loop start / end are special.
+;; We don't want the register allocator to morph these from/to ordinary
+;; moves, since pc-relative loads are position dependent in their range.
+(define_predicate "move_dest_operand"
+  (and (match_operand 0 "nonimmediate_operand")
+       (not (match_operand 0 "lpstart_reg_op"))
+       (not (match_operand 0 "lpend_reg_op"))
+       (not (match_operand 0 "lpcount_reg_op"))))
+
 ;; Predicates for the V extension.
 (define_special_predicate "vector_length_operand"
   (ior (match_operand 0 "pmode_register_operand")
