@@ -915,7 +915,7 @@
   rtx pat = PATTERN (operands[1]);
   /* ??? cleanup_cfg, called from pass_rtl_loop_done::execute, deletes
      loop latches without updating LABEL_REFS in non-jump instructions
-     even when marked with marked with REG_LABEL_OPEREND notes.  */
+     even when marked with REG_LABEL_OPEREND notes.  */
 #if 0
   rtx start_label_ref
     = XEXP (SET_SRC (XVECEXP (pat, 0, 0)), 1);
