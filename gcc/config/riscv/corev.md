@@ -857,14 +857,29 @@
    && (GET_CODE (operands[1]) == LABEL_REF
        || GET_CODE (operands[1]) == UNSPEC)
    && !hwloop_setupi_p (insn, operands[1], operands[3])"
-  [(set (match_dup 0) (match_dup 1))
-   (set (match_dup 2) (match_dup 3))
-   (set (match_dup 4) (match_dup 5))]
+  [(set (match_dup 4) (match_dup 5))]
 {
   if (GET_CODE (operands[1]) == UNSPEC)
     operands[1] = XVECEXP (operands[1], 0, 0);
+  else
+    {
+      emit_move_insn (operands[6], operands[1]);
+      operands[1] = operands[6];
+    }
+  emit_insn (gen_rtx_SET (operands[0], operands[1]));
   if (GET_CODE (operands[3]) == UNSPEC)
     operands[3] = XVECEXP (operands[3], 0, 0);
+  else
+    {
+      emit_move_insn (operands[6], operands[3]);
+      operands[3] = operands[6];
+    }
+  emit_insn (gen_rtx_SET (operands[2], operands[3]));
+  if (!satisfies_constraint_CV12 (operands[5]))
+    {
+      emit_move_insn (operands[6], operands[5]);
+      operands[5] = operands[6];
+    }
 }
   [(set_attr "move_type" "move")]
 )
