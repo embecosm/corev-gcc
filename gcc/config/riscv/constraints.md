@@ -235,13 +235,13 @@
   "lpcount0 for Xcv")
 
 (define_register_constraint "xcvl1s" "TARGET_XCVHWLP ? LP1START_REGS : NO_REGS"
-  "lpstart0 for Xcv")
+  "lpstart1 for Xcv")
 
 (define_register_constraint "xcvl1e" "TARGET_XCVHWLP ? LP1END_REGS : NO_REGS"
-  "lpend0 for Xcv")
+  "lpend1 for Xcv")
 
 (define_register_constraint "xcvl1c" "TARGET_XCVHWLP ? LP1COUNT_REGS : NO_REGS"
-  "lpcount0 for Xcv")
+  "lpcount1 for Xcv")
 
 (define_constraint "CVl0"
   "A label that follows immediately after the instruction that uses it"
