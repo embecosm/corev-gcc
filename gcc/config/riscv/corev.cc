@@ -276,6 +276,8 @@ pass_riscv_doloop_ranges::execute (function *)
 	continue;
       rtx *lref_s_loc = &SET_SRC (XVECEXP (PATTERN (insn), 0, 0));
       rtx *lref_e_loc = &SET_SRC (XVECEXP (PATTERN (insn), 0, 1));
+      rtx lp_count =        SET_SRC (XVECEXP (PATTERN (insn), 0, 2));
+      rtx scratch =     SET_DEST (XVECEXP (PATTERN (insn), 0, 3));
       rtx start_label_ref = *lref_s_loc;
       rtx end_label_ref = *lref_e_loc;
       if (GET_CODE (start_label_ref) == UNSPEC)
@@ -283,10 +285,37 @@ pass_riscv_doloop_ranges::execute (function *)
       if (GET_CODE (end_label_ref) == UNSPEC)
 	end_label_ref = XVECEXP (end_label_ref, 0, 0);
 
+      if (reload_completed
+	  && GET_CODE (scratch) == SCRATCH
+	  && (next_active_insn (label_ref_label (start_label_ref))
+	      != next_active_insn (insn))
+	  && CONST_INT_P (lp_count))
+	{
+	  /* This is supposed to be a cv.setupi, but register allocation
+	     put spill code in between the doloop_setup_i and the loop
+	     start.  */
+	  rtx_insn *prev = PREV_INSN (insn);
+	  rtx_insn *next = NEXT_INSN (insn);
+	  SET_NEXT_INSN (prev) = NEXT_INSN (insn);
+	  SET_PREV_INSN (next) = PREV_INSN (insn);
+	  SET_PREV_INSN (insn) = NULL_RTX;
+	  SET_NEXT_INSN (insn) = NULL_RTX;
+
+	  emit_insn_after (insn, PREV_INSN (label_ref_label (start_label_ref)));
+
+	  insn = next;
+	  continue;
+	}
+
       if (next_active_insn (label_ref_label (start_label_ref))
 	  != next_active_insn (insn))
 	{
-	  *lref_s_loc = start_label_ref;
+	  if (GET_CODE (*lref_s_loc) == UNSPEC)
+	    *lref_s_loc = gen_rtx_UNSPEC (SImode,
+					  gen_rtvec (1, start_label_ref),
+					  UNSPEC_CV_LP_START_12);
+	  else
+	    *lref_s_loc = start_label_ref;
 	  /* We must not emit an insn outside of basic blocks, so
 	     emit the align after the  NOTE_INSN_BASIC_BLOCK note.  */
 	  rtx_insn *after = NEXT_INSN (label_ref_label (start_label_ref));

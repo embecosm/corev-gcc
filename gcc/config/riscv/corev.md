@@ -29,6 +29,7 @@
   UNSPEC_CV_LOOPBUG
   UNSPECV_CV_LOOPALIGN
   UNSPEC_CV_FOLLOWS
+  UNSPEC_CV_LP_START_12
   UNSPEC_CV_LP_END_5
   UNSPEC_CV_LP_END_12
 
@@ -875,7 +876,8 @@
       operands[3] = operands[6];
     }
   emit_insn (gen_rtx_SET (operands[2], operands[3]));
-  if (!satisfies_constraint_CV12 (operands[5]))
+  if (!REG_P (operands[5])
+      && !satisfies_constraint_CV12 (operands[5]))
     {
       emit_move_insn (operands[6], operands[5]);
       operands[5] = operands[6];
