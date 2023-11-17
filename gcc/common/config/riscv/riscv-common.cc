@@ -1677,7 +1677,7 @@ static const riscv_ext_flag_table_t riscv_ext_flag_table[] =
 
   {"xcvmac",        &gcc_options::x_riscv_xcv_subext, MASK_XCVMAC},
   {"xcvalu",        &gcc_options::x_riscv_xcv_subext, MASK_XCVALU},
-  {"xcvhwlp",       &gcc_options::x_riscv_xcv_flags, MASK_XCVHWLP},
+  {"xcvhwlp",       &gcc_options::x_riscv_xcv_subext, MASK_XCVHWLP},
 
   {"xtheadba",      &gcc_options::x_riscv_xthead_subext, MASK_XTHEADBA},
   {"xtheadbb",      &gcc_options::x_riscv_xthead_subext, MASK_XTHEADBB},
