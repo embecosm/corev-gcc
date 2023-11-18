@@ -827,6 +827,16 @@
   ".balign\t4\;.option norvc"
   [(set_attr "type" "ghost")])
 
+; We use an actual doloop_begin pattern to make sure the loop counter
+; gets allocated to the right registers, and that we have a scratch GPR
+; if we nee it.
+; We do want the doloop_begin_i pattern to be right at the top of the loop
+; for efficiency, as we can use cv.setup / cv.setupi then.
+; If we must, we can, however, split the instruction into a triplet
+; of instruction that can go anywhere - with potentially some extra
+; instrustions to load constants into GPR registers first, particularily
+; if the loop start setup ends up below the loop.
+
 ;; Sometimes - e.g. newlib/libc/stdlib/src4random.c 
 ;; -Os  -march=rv32imc_zicsr_xcvhwlp - we have spagetti code at split2, with
 ;; the loop setup below the loop, and it's still spaghetti at peephole2, but

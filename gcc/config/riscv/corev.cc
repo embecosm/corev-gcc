@@ -293,7 +293,19 @@ pass_riscv_doloop_ranges::execute (function *)
 	{
 	  /* This is supposed to be a cv.setupi, but register allocation
 	     put spill code in between the doloop_setup_i and the loop
-	     start.  */
+	     start.  Move the doloop_begin_i back to the start of the loop.
+	     We can't do this if the loop counter is initialized from a
+	     register, because that register might be used by the spill code;
+	     it fact, it is likely to be used by it, so there is little point
+	     to analyze if it is.
+	     ??? We could allow the doloop_begin_i pattern to read the count
+	     from memory (using clobber and splitter to fix that up) to have
+	     a better chance to get code that allows the doloop_begin_i to
+	     be moved back to the start of the loop.
+	     ??? Much better would be to have a hook or other mechanism to
+	     prevent reload / lra from inserting spill code between
+	     doloop_begin_i and the loop start.  */
+
 	  rtx_insn *prev = PREV_INSN (insn);
 	  rtx_insn *next = NEXT_INSN (insn);
 	  SET_NEXT_INSN (prev) = NEXT_INSN (insn);
