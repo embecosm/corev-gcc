@@ -144,9 +144,10 @@ riscv_invalid_within_doloop (const rtx_insn *insn)
    a doloop_end_i pattern that provides the label END .
    If found, return the remaining value of COUNT, otherwise, 0.  */
 static unsigned
-doloop_end_range_check (rtx_insn *insn, rtx_insn *end, unsigned count)
+doloop_end_range_check (rtx_insn *insn, rtx_insn *end, unsigned ucount)
 {
   struct recog_data_d save_recog_data = recog_data;
+  int count = ucount;
 
   for (; count > 0; insn = NEXT_INSN (insn))
     {
@@ -168,7 +169,7 @@ doloop_end_range_check (rtx_insn *insn, rtx_insn *end, unsigned count)
       count -= n_insns;
     }
   recog_data = save_recog_data;
-  return count;
+  return count >= 0 ? count : 0;
 }
 
 /* Determine if we can implement the loop setup MD_INSN with cv.setup /
