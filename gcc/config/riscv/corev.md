@@ -844,6 +844,31 @@
 ;; until after bbro, and add another split pass - or always drive the split
 ;; with a '#' output pattern, to avoid this issue?
 
+;; If we have a doloop_begin_i instruction that has labels that
+;; statisfy cv.setup, but not cv.setupi, yet the loop count is an
+;; immediate, split to load the immediate into the scratch register.
+;; Place this splitter first so that it takes precedence over splitting
+;; into a cv.starti / cv.endi / cv.counti triple.
+(define_split
+  [(set (match_operand:SI 0 "lpstart_reg_op")
+        (match_operand:SI 1))
+   (set (match_operand:SI 2 "lpend_reg_op")
+        (match_operand:SI 3))
+   (set (match_operand:SI 4 "register_operand")
+        (match_operand:SI 5 "immediate_operand"))
+   (clobber (match_operand:SI 6 "register_operand"))]
+  "TARGET_XCVHWLP
+   && reload_completed
+   && hwloop_setup_p (insn, operands[1], operands[3], 4095)
+   && !satisfies_constraint_xcvlb5 (operands[3])"
+  [(set (match_dup 6) (match_dup 5))
+   (parallel
+     [(set (match_dup 0) (match_dup 1))
+      (set (match_dup 2) (match_dup 3))
+      (set (match_dup 4) (match_dup 6))
+      (clobber (scratch:SI))])]
+)
+
 (define_insn_and_split "doloop_begin_i"
   [(set (match_operand:SI 0 "lpstart_reg_op")
 	(match_operand:SI 1))
@@ -867,7 +892,7 @@
   "&& reload_completed
    && (GET_CODE (operands[1]) == LABEL_REF
        || GET_CODE (operands[1]) == UNSPEC)
-   && !hwloop_setupi_p (insn, operands[1], operands[3])"
+   && !hwloop_setup_p (insn, operands[1], operands[3], 31)"
   [(set (match_dup 4) (match_dup 5))]
 {
   if (GET_CODE (operands[1]) == UNSPEC)
@@ -894,29 +919,6 @@
     }
 }
   [(set_attr "move_type" "move")]
-)
-
-;; If we have a doloop_begin_i instruction that has labels that
-;; statisfy cv.setup, but not cv.setupi, yet the loop count is an
-;; immediate, split to load the immediate into the scratch register.
-(define_split
-  [(set (match_operand:SI 0 "lpstart_reg_op")
-        (match_operand:SI 1))
-   (set (match_operand:SI 2 "lpend_reg_op")
-        (match_operand:SI 3))
-   (set (match_operand:SI 4 "register_operand")
-        (match_operand:SI 5 "immediate_operand"))
-   (clobber (match_operand:SI 6 "register_operand"))]
-  "TARGET_XCVHWLP
-   && reload_completed
-   && hwloop_setupi_p (insn, operands[1], operands[3])
-   && !satisfies_constraint_xcvlb5 (operands[3])"
-  [(set (match_dup 6) (match_dup 5))
-   (parallel
-     [(set (match_dup 0) (match_dup 1))
-      (set (match_dup 2) (match_dup 3))
-      (set (match_dup 4) (match_dup 6))
-      (clobber (scratch:SI))])]
 )
 
 (define_expand "doloop_begin"

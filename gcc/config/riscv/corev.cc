@@ -12,6 +12,7 @@
 #include "tm_p.h"
 #include "tree-pass.h"
 #include "df.h"
+#include "insn-attr.h"
 
 /* Creating doloop_begin patterns fully formed with a named pattern
    reusults in the labels they use to refer to the loop start being
@@ -145,6 +146,8 @@ riscv_invalid_within_doloop (const rtx_insn *insn)
 static unsigned
 doloop_end_range_check (rtx_insn *insn, rtx_insn *end, unsigned count)
 {
+  struct recog_data_d save_recog_data = recog_data;
+
   for (; count > 0; insn = NEXT_INSN (insn))
     {
       if (insn == NULL_RTX)
@@ -157,17 +160,25 @@ doloop_end_range_check (rtx_insn *insn, rtx_insn *end, unsigned count)
 	  if (label_ref_label (XEXP (label_use, 0)) == end)
 	    break;
 	}
-      count--;
+      /* We can't have short insn inside hw loops, so generally, we just
+	 count insns.  However, some rtl instructions, like ASMs and
+	 constant loads, might actually stand for multiple assembler
+	 instructions.  */
+      int n_insns = (get_attr_length (insn) + 3) >> 2;
+      count -= n_insns;
     }
+  recog_data = save_recog_data;
   return count;
 }
 
-/* Determine if we can implement the loop setup MD_INSN with cv.setupi,
-   considering the hardware loop starts at the labels in the LABEL_REFs
-   START_REF and END_REF.  */
+/* Determine if we can implement the loop setup MD_INSN with cv.setup /
+   cv.setupi, considering the hardware loop starts and ends at the labels
+   in the LABEL_REFs START_REF and END_REF.
+   Count is the maximum of instruction of the loop including the cv.setup(i)
+   instruction.   */
 
 bool
-hwloop_setupi_p (rtx md_insn, rtx start_ref, rtx end_ref)
+hwloop_setup_p (rtx md_insn, rtx start_ref, rtx end_ref, int count)
 {
   rtx_insn *insn = as_a <rtx_insn *> (md_insn);
   if (GET_CODE (start_ref) == UNSPEC)
@@ -181,8 +192,8 @@ hwloop_setupi_p (rtx md_insn, rtx start_ref, rtx end_ref)
   if (next_active_insn (insn) != next_active_insn (start))
     return false;
 
-  /* Loops with >= 4K instructions can't be setup with cv.setupi .  */
-  if (doloop_end_range_check (insn, end, 4095) == 0)
+  /* Check that we don't exceed the maximum loop size for sv.setup(i) .  */
+  if (doloop_end_range_check (insn, end, count) == 0)
     return false;
 
   return true;
@@ -350,8 +361,13 @@ pass_riscv_doloop_ranges::execute (function *)
 
       if (rest)
 	{
-	  /* Check if an unsigned 5 bit offset is enough.  */
-	  bool short_p = count - rest <= 31;
+	  /* Check if an unsigned 5 bit offset is enough.
+	     Note that the offset counts from the cv.setupi instruction to
+	     the end of the loop, and the maximum value we can encode is 31
+	     (value 0 is a constraint violation and 1 is an empty loop),
+	     so the count of instructions *inside* the loop must be less
+	     than 31 . */
+	  bool short_p = count - rest < 31;
 	  HOST_WIDE_INT val
 	    = short_p ? UNSPEC_CV_LP_END_5 : UNSPEC_CV_LP_END_12;
 	  if (GET_CODE (*lref_e_loc) != UNSPEC
