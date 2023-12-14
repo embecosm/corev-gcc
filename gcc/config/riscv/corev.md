@@ -883,8 +883,10 @@
     [xcvl1s, CVl0, xcvl1e, xcvlb5, xcvl1c, CV12, X ; 4] cv.setupi\t1, %5, %3
     [xcvl0s, CVl0, xcvl0e, xcvlbe, xcvl0c, r,    X ; 4] cv.setup\t0, %5, %3
     [xcvl1s, CVl0, xcvl1e, xcvlbe, xcvl1c, r,    X ; 4] cv.setup\t1, %5, %3
-    [xcvl0s,?iCVl0,xcvl0e,?ixcvlbe,xcvl0c, ?ri, &r ; 12] #
-    [xcvl1s,?iCVl0,xcvl1e,?ixcvlbe,xcvl1c, ?ri, &r ; 12] #
+    [xcvl0s,xcvlbs,xcvl0e,?xcvlbe,?xcvl0c, CV12r,X ; 12] #
+    [xcvl1s,xcvlbs,xcvl1e,?xcvlbe,?xcvl1c, CV12r,X ; 12] #
+    [xcvl0s,?iCVl0,xcvl0e,?ixcvlbe,xcvl0c,??ri, &r ; 36] #
+    [xcvl1s,?iCVl0,xcvl1e,?ixcvlbe,xcvl1c,??ri, &r ; 36] #
   }
   ;; We don't know the loop length until after register allocation.
   ;; Even in the cases where we already can know before reload that we must

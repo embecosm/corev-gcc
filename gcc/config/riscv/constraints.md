@@ -189,7 +189,7 @@
 (define_constraint "xcvlbs"
   "A label for a loop start that can definitely be addressed with a 12-bit-offset"
   (and (match_code "unspec")
-       (match_test "XINT (op, 1) == UNSPEC_CV_LP_END_12")))
+       (match_test "XINT (op, 1) == UNSPEC_CV_LP_START_12")))
 
 (define_constraint "xcvlbe"
   "A label for a loop end that can definitely be addressed with a 12-bit-offset"
