@@ -160,7 +160,7 @@
 (define_mode_iterator VLSI [
   (V1QI "riscv_vector::vls_mode_valid_p (V1QImode)")
   (V2QI "riscv_vector::vls_mode_valid_p (V2QImode)")
-  (V4QI "riscv_vector::vls_mode_valid_p (V4QImode)")
+  (V4QI "riscv_vector::vls_mode_valid_p (V4QImode) || (TARGET_XCVSIMD && !TARGET_VECTOR)")
   (V8QI "riscv_vector::vls_mode_valid_p (V8QImode)")
   (V16QI "riscv_vector::vls_mode_valid_p (V16QImode)")
   (V32QI "riscv_vector::vls_mode_valid_p (V32QImode)")
@@ -3823,7 +3823,7 @@
 (define_mode_iterator VLS_AVL_IMM [
   (V1QI "riscv_vector::vls_mode_valid_p (V1QImode)")
   (V2QI "riscv_vector::vls_mode_valid_p (V2QImode)")
-  (V4QI "riscv_vector::vls_mode_valid_p (V4QImode)")
+  (V4QI "riscv_vector::vls_mode_valid_p (V4QImode) || (TARGET_XCVSIMD && !TARGET_VECTOR)")
   (V8QI "riscv_vector::vls_mode_valid_p (V8QImode)")
   (V16QI "riscv_vector::vls_mode_valid_p (V16QImode)")
   (V1HI "riscv_vector::vls_mode_valid_p (V1HImode)")

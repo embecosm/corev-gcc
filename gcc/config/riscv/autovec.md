@@ -447,18 +447,41 @@
 ;; - vadd.vi/vsub.vi/...
 ;; -------------------------------------------------------------------------
 
-(define_insn_and_split "<optab><mode>3"
+(define_expand "<optab><mode>3"
   [(set (match_operand:V_VLSI 0 "register_operand")
     (any_int_binop_no_shift:V_VLSI
-     (match_operand:V_VLSI 1 "<binop_rhs1_predicate>")
-     (match_operand:V_VLSI 2 "<binop_rhs2_predicate>")))]
+      (match_operand:V_VLSI 1 "<binop_rhs1_predicate>")
+      (match_operand:V_VLSI 2 "<binop_rhs2_predicate>")))]
+  "(TARGET_VECTOR && can_create_pseudo_p ())
+   ||   (TARGET_XCVSIMD && <MODE>mode == V4QImode && <CODE> == PLUS)"
+{
+  if (TARGET_XCVSIMD && !TARGET_VECTOR
+      && <MODE>mode == V4QImode && <CODE> == PLUS
+      && register_operand (operands[1], V4QImode)
+      && register_operand (operands[2], V4QImode))
+    {
+      rtx op0_si = gen_lowpart (SImode, operands[0]);
+      rtx op1_si = gen_lowpart (SImode, operands[1]);
+      rtx op2_si = gen_lowpart (SImode, operands[2]);
+      emit_insn (gen_riscv_cv_simd_add_b_si (op0_si, op1_si, op2_si));
+      DONE;
+    }
+  emit_insn (gen_<optab><mode>3_internal (operands[0], operands[1], operands[2]));
+  DONE;
+})
+
+(define_insn_and_split "<optab><mode>3_internal"
+  [(set (match_operand:V_VLSI 0 "register_operand")
+    (any_int_binop_no_shift:V_VLSI
+      (match_operand:V_VLSI 1 "<binop_rhs1_predicate>")
+      (match_operand:V_VLSI 2 "<binop_rhs2_predicate>")))]
   "TARGET_VECTOR && can_create_pseudo_p ()"
   "#"
   "&& 1"
   [(const_int 0)]
 {
   riscv_vector::emit_vlmax_insn (code_for_pred (<CODE>, <MODE>mode),
-				 riscv_vector::BINARY_OP, operands);
+    riscv_vector::BINARY_OP, operands);
   DONE;
 }
 [(set_attr "type" "vialu")])

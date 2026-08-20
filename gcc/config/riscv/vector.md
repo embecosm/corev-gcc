@@ -1070,7 +1070,7 @@
   /* For whole register move, we transform the pattern into the format
      that excludes the clobber of scratch register.
 
-     We include clobber of a scalar scratch register which is going to be
+     We include clobber of a scalar scratch register which is going to bedefine_expand "mov<mo
      used for emit of vsetvl instruction after reload_completed since we
      need vsetvl instruction to set VL/VTYPE global status for fractional
      vector load/store.
@@ -1291,8 +1291,17 @@
 (define_expand "mov<mode>"
   [(set (match_operand:VLS_AVL_IMM 0 "reg_or_mem_operand")
 	(match_operand:VLS_AVL_IMM 1 "general_operand"))]
-  "TARGET_VECTOR"
+  "TARGET_VECTOR || (TARGET_XCVSIMD && <MODE>mode == V4QImode)"
 {
+
+	if (TARGET_XCVSIMD && !TARGET_VECTOR && <MODE>mode == V4QImode)
+	{
+		emit_move_insn (gen_lowpart (SImode, operands[0]),
+			gen_lowpart (SImode, operands[1]));
+		DONE;
+	}
+
+
   if (riscv_vector::legitimize_move (operands[0], &operands[1]))
     DONE;
 })

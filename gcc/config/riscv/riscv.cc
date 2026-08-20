@@ -8636,7 +8636,10 @@ riscv_hard_regno_mode_ok (unsigned int regno, machine_mode mode)
   if (GP_REG_P (regno))
     {
       if (riscv_v_ext_mode_p (mode))
-	return false;
+      {
+        if (!(TARGET_XCVSIMD && (mode == V4QImode || mode == V2HImode)))
+          return false;
+      }
 
       if (!GP_REG_P (regno + nregs - 1))
 	return false;
@@ -10350,6 +10353,9 @@ riscv_vector_mode_supported_p (machine_mode mode)
   if (TARGET_VECTOR)
     return riscv_v_ext_mode_p (mode);
 
+  if (TARGET_XCVSIMD && (mode == V4QImode || mode == V2HImode))
+    return true;
+
   return false;
 }
 
@@ -10988,6 +10994,12 @@ riscv_autovectorize_vector_modes (vector_modes *modes, bool all)
   if (TARGET_VECTOR && !TARGET_XTHEADVECTOR)
     return riscv_vector::autovectorize_vector_modes (modes, all);
 
+  if (TARGET_XCVSIMD)
+  {
+    modes->safe_push (V4QImode);
+    return VECT_COMPARE_COSTS;
+  }
+
   return default_autovectorize_vector_modes (modes, all);
 }
 
@@ -10999,6 +11011,10 @@ riscv_vectorize_related_mode (machine_mode vector_mode, scalar_mode element_mode
   if (TARGET_VECTOR)
     return riscv_vector::vectorize_related_mode (vector_mode, element_mode,
 						 nunits);
+
+  if (TARGET_XCVSIMD && element_mode == QImode && (known_eq (nunits, 0U) || known_eq (nunits, 4U)))
+      return V4QImode;
+  
   return default_vectorize_related_mode (vector_mode, element_mode, nunits);
 }
 
