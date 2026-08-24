@@ -904,6 +904,18 @@
 	(set_attr "mode" "SI")])
 
 
+(define_insn "*movv4qi_xcvsimd"
+	[(set (match_operand:V4QI 0 "nonimmediate_operand" "=r, r, m")
+		(match_operand:V4QI 1 "general_operand" "r, m, r"))]
+	"TARGET_XCVSIMD && !TARGET_VECTOR"
+	"@
+	mv\t%0,%1
+	lw\t&0,%1
+	sw\t%1,%0"
+	[(set_attr "type" "move,load,store")
+	(set_attr "mode" "V4QI")])
+
+
 (define_insn "riscv_cv_simd_add_sc_h_si"
 	[(set (match_operand:SI 0 "register_operand" "=r,r")
 		(unspec:SI [(match_operand:SI 1 "register_operand" "r,r")

@@ -1293,15 +1293,11 @@
 	(match_operand:VLS_AVL_IMM 1 "general_operand"))]
   "TARGET_VECTOR || (TARGET_XCVSIMD && <MODE>mode == V4QImode)"
 {
-
 	if (TARGET_XCVSIMD && !TARGET_VECTOR && <MODE>mode == V4QImode)
 	{
-		emit_move_insn (gen_lowpart (SImode, operands[0]),
-			gen_lowpart (SImode, operands[1]));
+		emit_insn (gen_rtx_SET (operands[0], operands[1]));
 		DONE;
 	}
-
-
   if (riscv_vector::legitimize_move (operands[0], &operands[1]))
     DONE;
 })
