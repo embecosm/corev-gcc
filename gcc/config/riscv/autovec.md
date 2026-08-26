@@ -460,10 +460,7 @@
       && register_operand (operands[1], V4QImode)
       && register_operand (operands[2], V4QImode))
     {
-      rtx op0_si = gen_lowpart (SImode, operands[0]);
-      rtx op1_si = gen_lowpart (SImode, operands[1]);
-      rtx op2_si = gen_lowpart (SImode, operands[2]);
-      emit_insn (gen_riscv_cv_simd_add_b_si (op0_si, op1_si, op2_si));
+      emit_insn (gen_riscv_cv_addv4qi (operands[0], operands[1], operands[2]));
       DONE;
     }
   emit_insn (gen_<optab><mode>3_internal (operands[0], operands[1], operands[2]));

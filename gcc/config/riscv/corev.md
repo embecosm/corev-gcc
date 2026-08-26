@@ -893,15 +893,28 @@
 	(set_attr "mode" "SI")])
 
 
-(define_insn "riscv_cv_simd_add_b_si"
-	[(set (match_operand:SI 0 "register_operand" "=r")
-		(unspec:SI [(match_operand:SI 1 "register_operand" "r")
-		(match_operand:SI 2 "register_operand" "r")]
-	UNSPEC_CV_ADD_B))]
+(define_insn "riscv_cv_addv4qi"
+	[(set (match_operand:V4QI 0 "register_operand" "=r")
+        (plus:V4QI (match_operand:V4QI 1 "register_operand" "r")
+        	(match_operand:V4QI 2 "register_operand" "r")))]
 	"TARGET_XCVSIMD && !TARGET_64BIT"
 	"cv.add.b\t%0,%1,%2"
 	[(set_attr "type" "arith")
-	(set_attr "mode" "SI")])
+	(set_attr "mode" "V4QI")])
+
+(define_expand "riscv_cv_simd_add_b_si"
+	[(match_operand:SI 0 "register_operand") 
+	 (match_operand:SI 1 "register_operand")
+	(match_operand:SI 2 "register_operand")]
+	"TARGET_XCVSIMD && !TARGET_64BIT"
+{
+	rtx v0 = gen_lowpart (V4QImode, operands[0]);
+	rtx v1 = gen_lowpart (V4QImode, operands[1]);
+	rtx v2 = gen_lowpart (V4QImode, operands[2]);
+  	emit_insn (gen_riscv_cv_addv4qi (v0, v1, v2));
+  	DONE;
+})
+
 
 
 (define_insn "*movv4qi_xcvsimd"
@@ -910,7 +923,7 @@
 	"TARGET_XCVSIMD && !TARGET_VECTOR"
 	"@
 	mv\t%0,%1
-	lw\t&0,%1
+	lw\t%0,%1
 	sw\t%1,%0"
 	[(set_attr "type" "move,load,store")
 	(set_attr "mode" "V4QI")])
