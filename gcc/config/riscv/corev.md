@@ -877,20 +877,48 @@
 
 ;;CORE-V SIMD
 ;;CORE-V SIMD ALU
-(define_insn "riscv_cv_simd_add_h_si"
-	[(set (match_operand:SI 0 "register_operand" "=r,r,r,r")
-		(unspec:SI [(match_operand:SI 1 "register_operand" "r,r,r,r")
-		(match_operand:SI 2 "register_operand" "r,r,r,r")
-		(match_operand:QI 3 "const_int2_operand" "J,c01,c02,c03")]
-	UNSPEC_CV_ADD_H))]
+(define_insn "riscv_cv_addv2hi"
+	[(set (match_operand:V2HI 0 "register_operand" "=r")
+    	(plus:V2HI (match_operand:V2HI 1 "register_operand" "r")
+            (match_operand:V2HI 2 "register_operand" "r")))]
 	"TARGET_XCVSIMD && !TARGET_64BIT"
-	"@
-	 cv.add.h\t%0,%1,%2
-	 cv.add.div2\t%0,%1,%2
-	 cv.add.div4\t%0,%1,%2
-	 cv.add.div8\t%0,%1,%2"
-	[(set_attr "type" "arith")
-	(set_attr "mode" "SI")])
+  	"cv.add.h\t%0,%1,%2"
+  	[(set_attr "type" "arith")
+   	(set_attr "mode" "V2HI")])
+
+(define_insn "riscv_cv_simd_add_h_si_internal"
+  	[(set (match_operand:SI 0 "register_operand" "=r,r,r,r")
+        (unspec:SI [(match_operand:SI 1 "register_operand" "r,r,r,r")
+            (match_operand:SI 2 "register_operand" "r,r,r,r")
+            (match_operand:QI 3 "const_int2_operand" "J,c01,c02,c03")]
+            UNSPEC_CV_ADD_H))]
+  	"TARGET_XCVSIMD && !TARGET_64BIT"
+  	"@
+   	cv.add.h\t%0,%1,%2
+   	cv.add.div2\t%0,%1,%2
+   	cv.add.div4\t%0,%1,%2
+   	cv.add.div8\t%0,%1,%2"
+  	[(set_attr "type" "arith")
+   	(set_attr "mode" "SI")])
+
+(define_expand "riscv_cv_simd_add_h_si"
+  	[(match_operand:SI 0 "register_operand")
+   	(match_operand:SI 1 "register_operand")
+   	(match_operand:SI 2 "register_operand")
+   	(match_operand:QI 3 "const_int2_operand")]
+  	"TARGET_XCVSIMD && !TARGET_64BIT"
+{
+  	if (INTVAL (operands[3]) == 0) {
+      	rtx v0 = gen_lowpart (V2HImode, operands[0]);
+      	rtx v1 = gen_lowpart (V2HImode, operands[1]);
+      	rtx v2 = gen_lowpart (V2HImode, operands[2]);
+      	emit_insn (gen_riscv_cv_addv2hi (v0, v1, v2));
+    }
+  	else
+    	emit_insn (gen_riscv_cv_simd_add_h_si_internal (operands[0], operands[1],
+			operands[2], operands[3]));
+  	DONE;
+})
 
 
 (define_insn "riscv_cv_addv4qi"
@@ -915,8 +943,6 @@
   	DONE;
 })
 
-
-
 (define_insn "*movv4qi_xcvsimd"
 	[(set (match_operand:V4QI 0 "nonimmediate_operand" "=r, r, m")
 		(match_operand:V4QI 1 "general_operand" "r, m, r"))]
@@ -927,6 +953,17 @@
 	sw\t%1,%0"
 	[(set_attr "type" "move,load,store")
 	(set_attr "mode" "V4QI")])
+
+(define_insn "*movv2hi_xcvsimd"
+	[(set (match_operand:V2HI 0 "nonimmediate_operand" "=r, r, m")
+		(match_operand:V2HI 1 "general_operand" "r, m, r"))]
+	"TARGET_XCVSIMD && !TARGET_VECTOR"
+	"@
+	mv\t%0,%1
+	lw\t%0,%1
+	sw\t%1,%0"
+	[(set_attr "type" "move,load,store")
+	(set_attr "mode" "V2HI")])
 
 
 (define_insn "riscv_cv_simd_add_sc_h_si"

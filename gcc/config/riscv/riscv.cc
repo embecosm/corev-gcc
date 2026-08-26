@@ -10997,6 +10997,7 @@ riscv_autovectorize_vector_modes (vector_modes *modes, bool all)
   if (TARGET_XCVSIMD)
   {
     modes->safe_push (V4QImode);
+    modes->safe_push (V2HImode);
     return VECT_COMPARE_COSTS;
   }
 
@@ -11014,6 +11015,9 @@ riscv_vectorize_related_mode (machine_mode vector_mode, scalar_mode element_mode
 
   if (TARGET_XCVSIMD && element_mode == QImode && (known_eq (nunits, 0U) || known_eq (nunits, 4U)))
       return V4QImode;
+
+  if (TARGET_XCVSIMD && element_mode == HImode && (known_eq (nunits, 0U) || known_eq (nunits, 4U)))
+      return V2HImode;
   
   return default_vectorize_related_mode (vector_mode, element_mode, nunits);
 }
