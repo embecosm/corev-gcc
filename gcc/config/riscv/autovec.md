@@ -499,7 +499,7 @@
 ;; - vsll.vi/vsra.vi/vsrl.vi
 ;; -------------------------------------------------------------------------
 
-(define_insn_and_split "<optab><mode>3"
+(define_insn_and_split "<optab><mode>3_internal"
   [(set (match_operand:V_VLSI 0 "register_operand"        "=vr")
     (any_shift:V_VLSI
      (match_operand:V_VLSI 1 "register_operand"           " vr")
@@ -516,6 +516,26 @@
 }
  [(set_attr "type" "vshift")
   (set_attr "mode" "<MODE>")])
+
+
+(define_expand "<optab><mode>3"
+  [(set (match_operand:V_VLSI 0 "register_operand")
+    (any_shift:V_VLSI
+      (match_operand:V_VLSI 1 "register_operand")
+      (match_operand:<VEL> 2 "vector_scalar_shift_operand")))]
+  "(TARGET_VECTOR && can_create_pseudo_p ())
+    || (TARGET_XCVSIMD && !TARGET_VECTOR && <MODE>mode == V2HImode && <CODE> == ASHIFTRT)"
+{
+  if (TARGET_XCVSIMD && !TARGET_VECTOR
+        && <MODE>mode == V2HImode && <CODE> == ASHIFTRT
+        && register_operand (operands[1], V2HImode))
+    {
+        emit_insn (gen_riscv_cv_ashrv2hi (operands[0], operands[1], operands[2]));
+        DONE;
+    }
+  emit_insn (gen_<optab><mode>3_internal (operands[0], operands[1], operands[2]));
+  DONE;
+})
 
 ;; -------------------------------------------------------------------------
 ;; ---- [INT] Binary shifts by vector.

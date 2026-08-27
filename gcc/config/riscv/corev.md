@@ -901,6 +901,17 @@
   	[(set_attr "type" "arith")
    	(set_attr "mode" "SI")])
 
+
+(define_insn "riscv_cv_ashrv2hi"
+  	[(set (match_operand:V2HI 0 "register_operand" "=r")
+        (ashiftrt:V2HI (match_operand:V2HI 1 "register_operand" "r")
+            (match_operand:HI 2 "immediate_operand" "i")))]
+  	"TARGET_XCVSIMD && !TARGET_64BIT"
+  	"cv.sra.sci.h\t%0,%1,%2"
+  	[(set_attr "type" "arith")
+   	(set_attr "mode" "V2HI")])
+
+
 (define_expand "riscv_cv_simd_add_h_si"
   	[(match_operand:SI 0 "register_operand")
    	(match_operand:SI 1 "register_operand")
