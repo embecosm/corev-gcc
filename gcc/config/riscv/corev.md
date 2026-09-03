@@ -958,6 +958,75 @@
    	(set_attr "mode" "V4QI")])
 
 
+(define_insn "riscv_cv_ashrv2hi_reg"
+  	[(set (match_operand:V2HI 0 "register_operand" "=r")
+        (ashiftrt:V2HI (match_operand:V2HI 1 "register_operand" "r")
+            (match_operand:HI 2 "register_operand" "r")))]
+  	"TARGET_XCVSIMD && !TARGET_64BIT"
+  	"cv.sra.sc.h\t%0,%1,%2"
+  	[(set_attr "type" "arith")
+   	(set_attr "mode" "V2HI")])
+
+(define_insn "riscv_cv_ashrv4qi_reg"
+  	[(set (match_operand:V4QI 0 "register_operand" "=r")
+        (ashiftrt:V4QI (match_operand:V4QI 1 "register_operand" "r")
+            (match_operand:QI 2 "register_operand" "r")))]
+  	"TARGET_XCVSIMD && !TARGET_64BIT"
+  	"cv.sra.sc.b\t%0,%1,%2"
+  	[(set_attr "type" "arith")
+   	(set_attr "mode" "V4QI")])
+
+(define_insn "riscv_cv_lshrv2hi_reg"
+  	[(set (match_operand:V2HI 0 "register_operand" "=r")
+        (lshiftrt:V2HI (match_operand:V2HI 1 "register_operand" "r")
+        	(match_operand:HI 2 "register_operand" "r")))]
+ 	"TARGET_XCVSIMD && !TARGET_64BIT"
+  	"cv.srl.sc.h\t%0,%1,%2"
+  	[(set_attr "type" "arith")
+   	(set_attr "mode" "V2HI")])
+
+(define_insn "riscv_cv_lshrv4qi_reg"
+  	[(set (match_operand:V4QI 0 "register_operand" "=r")
+        (lshiftrt:V4QI (match_operand:V4QI 1 "register_operand" "r")
+            (match_operand:QI 2 "register_operand" "r")))]
+  	"TARGET_XCVSIMD && !TARGET_64BIT"
+  	"cv.srl.sc.b\t%0,%1,%2"
+  	[(set_attr "type" "arith")
+   	(set_attr "mode" "V4QI")])
+
+(define_insn "riscv_cv_ashlv2hi_reg"
+  	[(set (match_operand:V2HI 0 "register_operand" "=r")
+        (ashift:V2HI (match_operand:V2HI 1 "register_operand" "r")
+            (match_operand:HI 2 "register_operand" "r")))]
+  	"TARGET_XCVSIMD && !TARGET_64BIT"
+  	"cv.sll.sc.h\t%0,%1,%2"
+  	[(set_attr "type" "arith")
+   	(set_attr "mode" "V2HI")])
+
+(define_insn "riscv_cv_ashlv4qi_reg"
+  	[(set (match_operand:V4QI 0 "register_operand" "=r")
+        (ashift:V4QI (match_operand:V4QI 1 "register_operand" "r")
+            (match_operand:QI 2 "register_operand" "r")))]
+  	"TARGET_XCVSIMD && !TARGET_64BIT"
+  	"cv.sll.sc.b\t%0,%1,%2"
+  	[(set_attr "type" "arith")
+   	(set_attr "mode" "V4QI")])
+
+
+(define_insn "riscv_cv_add_div2v2hi"
+  	[(set (match_operand:V2HI 0 "register_operand" "=r")
+        (ashiftrt:V2HI
+          	(plus:V2HI (match_operand:V2HI 1 "register_operand" "r")
+                (match_operand:V2HI 2 "register_operand" "r"))
+          	(const_int 1)))]
+  	"TARGET_XCVSIMD && !TARGET_64BIT"
+  	"cv.add.div2\t%0,%1,%2"
+  	[(set_attr "type" "arith")
+   	(set_attr "mode" "V2HI")])
+
+
+
+
 
 (define_expand "riscv_cv_simd_add_h_si"
   	[(match_operand:SI 0 "register_operand")

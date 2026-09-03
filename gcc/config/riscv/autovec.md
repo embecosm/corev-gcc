@@ -526,33 +526,52 @@
   "(TARGET_VECTOR && can_create_pseudo_p ()) || (TARGET_XCVSIMD && !TARGET_VECTOR && (<MODE>mode == V4QImode || <MODE>mode == V2HImode))" 
     {
       if (TARGET_XCVSIMD && !TARGET_VECTOR && <MODE>mode == V2HImode && <CODE> == ASHIFTRT && register_operand (operands[1], V2HImode)) {
+        if (CONST_INT_P (operands[2]))
           emit_insn (gen_riscv_cv_ashrv2hi (operands[0], operands[1], operands[2]));
-          DONE;
-        }
+        else
+          emit_insn (gen_riscv_cv_ashrv2hi_reg (operands[0], operands[1], operands[2]));
+        DONE;
+      }
       if (TARGET_XCVSIMD && !TARGET_VECTOR && <MODE>mode == V4QImode && <CODE> == ASHIFTRT && register_operand (operands[1], V4QImode)) {
+        if (CONST_INT_P (operands[2]))
           emit_insn (gen_riscv_cv_ashrv4qi (operands[0], operands[1], operands[2]));
-          DONE;
-        }
+        else
+          emit_insn (gen_riscv_cv_ashrv4qi_reg (operands[0], operands[1], operands[2]));
+        DONE;
+      }
       if (TARGET_XCVSIMD && !TARGET_VECTOR && <MODE>mode == V2HImode && <CODE> == LSHIFTRT && register_operand (operands[1], V2HImode)) {
+        if (CONST_INT_P (operands[2]))
           emit_insn (gen_riscv_cv_lshrv2hi (operands[0], operands[1], operands[2]));
-          DONE;
-        }
+        else
+          emit_insn (gen_riscv_cv_lshrv2hi_reg (operands[0], operands[1], operands[2]));
+        DONE;
+      }
       if (TARGET_XCVSIMD && !TARGET_VECTOR && <MODE>mode == V4QImode && <CODE> == LSHIFTRT && register_operand (operands[1], V4QImode)) {
+        if (CONST_INT_P (operands[2]))
           emit_insn (gen_riscv_cv_lshrv4qi (operands[0], operands[1], operands[2]));
-          DONE;
-        }
+        else
+          emit_insn (gen_riscv_cv_lshrv4qi_reg (operands[0], operands[1], operands[2]));
+        DONE;
+      }
       if (TARGET_XCVSIMD && !TARGET_VECTOR && <MODE>mode == V2HImode && <CODE> == ASHIFT && register_operand (operands[1], V2HImode)) {
+        if (CONST_INT_P (operands[2]))
           emit_insn (gen_riscv_cv_ashlv2hi (operands[0], operands[1], operands[2]));
-          DONE;
-        }
+        else
+          emit_insn (gen_riscv_cv_ashlv2hi_reg (operands[0], operands[1], operands[2]));
+        DONE;
+      }
       if (TARGET_XCVSIMD && !TARGET_VECTOR && <MODE>mode == V4QImode && <CODE> == ASHIFT && register_operand (operands[1], V4QImode)) {
+        if (CONST_INT_P (operands[2]))
           emit_insn (gen_riscv_cv_ashlv4qi (operands[0], operands[1], operands[2]));
-          DONE;
-        }
+        else
+          emit_insn (gen_riscv_cv_ashlv4qi_reg (operands[0], operands[1], operands[2]));
+        DONE;
+      }
       emit_insn (gen_<optab><mode>3_internal (operands[0], operands[1], operands[2]));
       DONE;
     }
 )
+
 
 ;; -------------------------------------------------------------------------
 ;; ---- [INT] Binary shifts by vector.
