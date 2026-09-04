@@ -1024,7 +1024,27 @@
   	[(set_attr "type" "arith")
    	(set_attr "mode" "V2HI")])
 
+(define_insn "riscv_cv_add_div4v2hi"
+  	[(set (match_operand:V2HI 0 "register_operand" "=r")
+        (ashiftrt:V2HI
+          	(plus:V2HI (match_operand:V2HI 1 "register_operand" "r")
+                (match_operand:V2HI 2 "register_operand" "r"))
+          	(const_int 2)))]
+  	"TARGET_XCVSIMD && !TARGET_64BIT"
+  	"cv.add.div4\t%0,%1,%2"
+  	[(set_attr "type" "arith")
+   	(set_attr "mode" "V2HI")])
 
+(define_insn "riscv_cv_add_div8v2hi"
+  	[(set (match_operand:V2HI 0 "register_operand" "=r")
+        (ashiftrt:V2HI
+          	(plus:V2HI (match_operand:V2HI 1 "register_operand" "r")
+            	(match_operand:V2HI 2 "register_operand" "r"))
+          	(const_int 3)))]
+  	"TARGET_XCVSIMD && !TARGET_64BIT"
+  	"cv.add.div8\t%0,%1,%2"
+  	[(set_attr "type" "arith")
+   	(set_attr "mode" "V2HI")])
 
 
 
