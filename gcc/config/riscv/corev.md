@@ -1111,6 +1111,19 @@
 	sw\t%1,%0"
 	[(set_attr "type" "move,load,store")
 	(set_attr "mode" "V2HI")])
+	
+
+(define_insn "riscv_cv_simd_add_sc_b_si"
+	[(set (match_operand:SI 0 "register_operand" "=r,r")
+		(unspec:SI [(match_operand:SI 1 "register_operand" "r,r")
+		(match_operand:QI 2 "int6s_operand" "CV_simd_si6,r")]
+	UNSPEC_CV_ADD_SC_B))]
+	"TARGET_XCVSIMD && !TARGET_64BIT"
+	"@
+	 cv.add.sci.b\t%0,%1,%2
+	 cv.add.sc.b\t%0,%1,%2"
+	[(set_attr "type" "arith")
+	(set_attr "mode" "SI")])
 
 
 (define_insn "riscv_cv_simd_add_sc_h_si"
@@ -1126,44 +1139,67 @@
 	(set_attr "mode" "SI")])
 
 
-(define_insn "riscv_cv_simd_add_sc_b_si"
-	[(set (match_operand:SI 0 "register_operand" "=r,r")
-		(unspec:SI [(match_operand:SI 1 "register_operand" "r,r")
-		(match_operand:QI 2 "int6s_operand" "CV_simd_si6,r")]
-	UNSPEC_CV_ADD_SC_B))]
-	"TARGET_XCVSIMD && !TARGET_64BIT"
-	"@
-	 cv.add.sci.b\t%0,%1,%2
-	 cv.add.sc.b\t%0,%1,%2"
-	[(set_attr "type" "arith")
-	(set_attr "mode" "SI")])
+(define_insn "riscv_cv_subv4qi"
+  	[(set (match_operand:V4QI 0 "register_operand" "=r")
+        (minus:V4QI (match_operand:V4QI 1 "register_operand" "r")
+            (match_operand:V4QI 2 "register_operand" "r")))]
+  	"TARGET_XCVSIMD && !TARGET_64BIT"
+  	"cv.sub.b\t%0,%1,%2"
+  	[(set_attr "type" "arith")
+   	(set_attr "mode" "V4QI")])
 
+(define_expand "riscv_cv_simd_sub_b_si"
+  	[(match_operand:SI 0 "register_operand")
+   	(match_operand:SI 1 "register_operand")
+   	(match_operand:SI 2 "register_operand")]
+  	"TARGET_XCVSIMD && !TARGET_64BIT" {
+  	rtx v0 = gen_lowpart (V4QImode, operands[0]);
+  	rtx v1 = gen_lowpart (V4QImode, operands[1]);
+  	rtx v2 = gen_lowpart (V4QImode, operands[2]);
+  	emit_insn (gen_riscv_cv_subv4qi (v0, v1, v2));
+  	DONE;
+})
 
-(define_insn "riscv_cv_simd_sub_h_si"
-	[(set (match_operand:SI 0 "register_operand" "=r,r,r,r")
-		(unspec:SI [(match_operand:SI 1 "register_operand" "r,r,r,r")
-		(match_operand:SI 2 "register_operand" "r,r,r,r")
-		(match_operand:QI 3 "const_int2_operand" "J,c01,c02,c03")]
-	UNSPEC_CV_SUB_H))]
-	"TARGET_XCVSIMD && !TARGET_64BIT"
-	"@
-	 cv.sub.h\t%0,%1,%2
-	 cv.sub.div2\t%0,%1,%2
-	 cv.sub.div4\t%0,%1,%2
-	 cv.sub.div8\t%0,%1,%2"
-	[(set_attr "type" "arith")
-	(set_attr "mode" "SI")])
+(define_insn "riscv_cv_subv2hi"
+  	[(set (match_operand:V2HI 0 "register_operand" "=r")
+        (minus:V2HI (match_operand:V2HI 1 "register_operand" "r")
+        	(match_operand:V2HI 2 "register_operand" "r")))]
+  	"TARGET_XCVSIMD && !TARGET_64BIT"
+  	"cv.sub.h\t%0,%1,%2"
+  	[(set_attr "type" "arith")
+   	(set_attr "mode" "V2HI")])
 
+(define_insn "riscv_cv_simd_sub_h_si_internal"
+  	[(set (match_operand:SI 0 "register_operand" "=r,r,r,r")
+        (unspec:SI [(match_operand:SI 1 "register_operand" "r,r,r,r")
+            (match_operand:SI 2 "register_operand" "r,r,r,r")
+            (match_operand:QI 3 "const_int2_operand" "J, c01, c02, c03")]
+            UNSPEC_CV_SUB_H))]
+  	"TARGET_XCVSIMD && !TARGET_64BIT"
+  	"@
+   	cv.sub.h\t%0,%1,%2
+   	cv.sub.div2\t%0,%1,%2
+   	cv.sub.div4\t%0,%1,%2
+   	cv.sub.div8\t%0,%1,%2"
+  	[(set_attr "type" "arith")
+   	(set_attr "mode" "SI")])
 
-(define_insn "riscv_cv_simd_sub_b_si"
-	[(set (match_operand:SI 0 "register_operand" "=r")
-		(unspec:SI [(match_operand:SI 1 "register_operand" "r")
-		(match_operand:SI 2 "register_operand" "r")]
-	UNSPEC_CV_SUB_B))]
-	"TARGET_XCVSIMD && !TARGET_64BIT"
-	"cv.sub.b\t%0,%1,%2"
-	[(set_attr "type" "arith")
-	(set_attr "mode" "SI")])
+(define_expand "riscv_cv_simd_sub_h_si"
+  	[(match_operand:SI 0 "register_operand")
+   	(match_operand:SI 1 "register_operand")
+   	(match_operand:SI 2 "register_operand")
+   	(match_operand:QI 3 "const_int2_operand")]
+  	"TARGET_XCVSIMD && !TARGET_64BIT" {
+  	if (INTVAL (operands[3]) == 0) {
+		rtx v0 = gen_lowpart (V2HImode, operands[0]);
+      	rtx v1 = gen_lowpart (V2HImode, operands[1]);
+      	rtx v2 = gen_lowpart (V2HImode, operands[2]);
+      	emit_insn (gen_riscv_cv_subv2hi (v0, v1, v2));
+    }
+  	else
+    	emit_insn(gen_riscv_cv_simd_sub_h_si_internal (operands[0], operands[1], operands[2], operands[3]));
+  	DONE;
+})
 
 
 (define_insn "riscv_cv_simd_sub_sc_h_si"

@@ -453,7 +453,7 @@
       (match_operand:V_VLSI 1 "<binop_rhs1_predicate>")
       (match_operand:V_VLSI 2 "<binop_rhs2_predicate>")))]
   "(TARGET_VECTOR && can_create_pseudo_p ())
-   ||   (TARGET_XCVSIMD && (<MODE>mode == V4QImode || <MODE>mode == V2HImode) && <CODE> == PLUS)"
+   ||   (TARGET_XCVSIMD && (<MODE>mode == V4QImode || <MODE>mode == V2HImode) && (<CODE> == PLUS || <CODE> == MINUS))"
 {
   if (TARGET_XCVSIMD && !TARGET_VECTOR
       && <MODE>mode == V4QImode && <CODE> == PLUS
@@ -473,6 +473,16 @@
     }
   emit_insn (gen_<optab><mode>3_internal (operands[0], operands[1], operands[2]));
   DONE;
+
+  if (TARGET_XCVSIMD && !TARGET_VECTOR && <MODE>mode == V4QImode && <CODE> == MINUS && register_operand (operands[1], V4QImode) && register_operand (operands[2], V4QImode)) {
+      emit_insn (gen_riscv_cv_subv4qi (operands[0], operands[1], operands[2]));
+      DONE;
+    }
+  if (TARGET_XCVSIMD && !TARGET_VECTOR && <MODE>mode == V2HImode && <CODE> == MINUS && register_operand (operands[1], V2HImode) && register_operand (operands[2], V2HImode)) {
+      emit_insn (gen_riscv_cv_subv2hi (operands[0], operands[1], operands[2]));
+      DONE;
+    }
+
 })
 
 (define_insn_and_split "<optab><mode>3_internal"
