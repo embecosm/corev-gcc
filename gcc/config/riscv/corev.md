@@ -1713,26 +1713,49 @@
 	(set_attr "mode" "SI")])
 
 
-(define_insn "riscv_cv_simd_or_h_si"
-	[(set (match_operand:SI 0 "register_operand" "=r")
-		(unspec:SI [(match_operand:SI 1 "register_operand" "r")
-		(match_operand:SI 2 "register_operand" "r")]
-	UNSPEC_CV_OR_H))]
-	"TARGET_XCVSIMD && !TARGET_64BIT"
-	"cv.or.h\t%0,%1,%2"
-	[(set_attr "type" "arith")
-	(set_attr "mode" "SI")])
-
-
-(define_insn "riscv_cv_simd_or_b_si"
-	[(set (match_operand:SI 0 "register_operand" "=r")
-		(unspec:SI [(match_operand:SI 1 "register_operand" "r")
-		(match_operand:SI 2 "register_operand" "r")]
-	UNSPEC_CV_OR_B))]
+(define_insn "riscv_cv_orv4qi"
+	[(set (match_operand:V4QI 0 "register_operand" "=r")
+		(ior:V4QI (match_operand:V4QI 1 "register_operand" "r")
+		(match_operand:V4QI 2 "register_operand" "r")))]
 	"TARGET_XCVSIMD && !TARGET_64BIT"
 	"cv.or.b\t%0,%1,%2"
 	[(set_attr "type" "arith")
-	(set_attr "mode" "SI")])
+	(set_attr "mode" "V4QI")])
+
+(define_expand "riscv_cv_simd_or_b_si"
+	[(match_operand:SI 0 "register_operand")
+		(match_operand:SI 1 "register_operand")
+		(match_operand:SI 2 "register_operand")]
+	"TARGET_XCVSIMD && !TARGET_64BIT" {
+		rtx v0 = gen_lowpart(V4QImode, operands[0]);
+		rtx v1 = gen_lowpart(V4QImode, operands[1]);
+		rtx v2 = gen_lowpart(V4QImode, operands[2]);
+		emit_insn (gen_riscv_cv_orv4qi (v0, v1, v2));
+		DONE;
+	})
+
+
+
+(define_insn "riscv_cv_orv2hi"
+	[(set (match_operand:V2HI 0 "register_operand" "=r")
+		(ior:V2HI (match_operand:V2HI 1 "register_operand" "r")
+		(match_operand:V2HI 2 "register_operand" "r")))]
+	"TARGET_XCVSIMD && !TARGET_64BIT"
+	"cv.or.h\t%0,%1,%2"
+	[(set_attr "type" "arith")
+	(set_attr "mode" "V2HI")])
+
+(define_expand "riscv_cv_simd_or_h_si"
+	[(match_operand:SI 0 "register_operand")
+		(match_operand:SI 1 "register_operand")
+		(match_operand:SI 2 "register_operand")]
+	"TARGET_XCVSIMD && !TARGET_64BIT" {
+		rtx v0 = gen_lowpart(V4QImode, operands[0]);
+		rtx v1 = gen_lowpart(V4QImode, operands[1]);
+		rtx v2 = gen_lowpart(V4QImode, operands[2]);
+		emit_insn (gen_riscv_cv_orv2hi (v0, v1, v2));
+		DONE;
+	})
 
 
 (define_insn "riscv_cv_simd_or_sc_h_si"
@@ -1761,26 +1784,50 @@
 	(set_attr "mode" "SI")])
 
 
-(define_insn "riscv_cv_simd_xor_h_si"
-	[(set (match_operand:SI 0 "register_operand" "=r")
-		(unspec:SI [(match_operand:SI 1 "register_operand" "r")
-		(match_operand:SI 2 "register_operand" "r")]
-	UNSPEC_CV_XOR_H))]
+(define_insn "riscv_cv_xorv2hi"
+	[(set (match_operand:V2HI 0 "register_operand" "=r")
+		(xor:V2HI (match_operand:V2HI 1 "register_operand" "r")
+		(match_operand:V2HI 2 "register_operand" "r")))]
 	"TARGET_XCVSIMD && !TARGET_64BIT"
 	"cv.xor.h\t%0,%1,%2"
 	[(set_attr "type" "arith")
-	(set_attr "mode" "SI")])
+	(set_attr "mode" "V2HI")])
+
+(define_expand "riscv_cv_simd_xor_h_si"
+	[(match_operand:SI 0 "register_operand")
+		(match_operand:SI 1 "register_operand")
+		(match_operand:SI 2 "register_operand")]
+	"TARGET_XCVSIMD && !TARGET_64BIT" {
+		rtx v0 = gen_lowpart(V4QImode, operands[0]);
+		rtx v1 = gen_lowpart(V4QImode, operands[1]);
+		rtx v2 = gen_lowpart(V4QImode, operands[2]);
+		emit_insn (gen_riscv_cv_xorv2hi (v0, v1, v2));
+		DONE;
+	})
 
 
-(define_insn "riscv_cv_simd_xor_b_si"
-	[(set (match_operand:SI 0 "register_operand" "=r")
-		(unspec:SI [(match_operand:SI 1 "register_operand" "r")
-		(match_operand:SI 2 "register_operand" "r")]
-	UNSPEC_CV_XOR_B))]
+
+(define_insn "riscv_cv_xorv4qi"
+	[(set (match_operand:V4QI 0 "register_operand" "=r")
+		(xor:V4QI (match_operand:V4QI 1 "register_operand" "r")
+		(match_operand:V4QI 2 "register_operand" "r")))]
 	"TARGET_XCVSIMD && !TARGET_64BIT"
 	"cv.xor.b\t%0,%1,%2"
 	[(set_attr "type" "arith")
-	(set_attr "mode" "SI")])
+	(set_attr "mode" "V4QI")])
+
+(define_expand "riscv_cv_simd_xor_b_si"
+	[(match_operand:SI 0 "register_operand")
+		(match_operand:SI 1 "register_operand")
+		(match_operand:SI 2 "register_operand")]
+	"TARGET_XCVSIMD && !TARGET_64BIT" {
+		rtx v0 = gen_lowpart(V4QImode, operands[0]);
+		rtx v1 = gen_lowpart(V4QImode, operands[1]);
+		rtx v2 = gen_lowpart(V4QImode, operands[2]);
+		emit_insn (gen_riscv_cv_xorv4qi (v0, v1, v2));
+		DONE;
+	})
+
 
 
 (define_insn "riscv_cv_simd_xor_sc_h_si"
@@ -1809,26 +1856,50 @@
 	(set_attr "mode" "SI")])
 
 
-(define_insn "riscv_cv_simd_and_h_si"
-	[(set (match_operand:SI 0 "register_operand" "=r")
-		(unspec:SI [(match_operand:SI 1 "register_operand" "r")
-		(match_operand:SI 2 "register_operand" "r")]
-	UNSPEC_CV_AND_H))]
+
+(define_insn "riscv_cv_andv2hi"
+	[(set (match_operand:V2HI 0 "register_operand" "=r")
+		(and:V2HI (match_operand:V2HI 1 "register_operand" "r")
+		(match_operand:V2HI 2 "register_operand" "r")))]
 	"TARGET_XCVSIMD && !TARGET_64BIT"
 	"cv.and.h\t%0,%1,%2"
 	[(set_attr "type" "arith")
-	(set_attr "mode" "SI")])
+	(set_attr "mode" "V2HI")])
+
+(define_expand "riscv_cv_simd_and_h_si"
+	[(match_operand:SI 0 "register_operand")
+		(match_operand:SI 1 "register_operand")
+		(match_operand:SI 2 "register_operand")]
+	"TARGET_XCVSIMD && !TARGET_64BIT" {
+		rtx v0 = gen_lowpart(V4QImode, operands[0]);
+		rtx v1 = gen_lowpart(V4QImode, operands[1]);
+		rtx v2 = gen_lowpart(V4QImode, operands[2]);
+		emit_insn (gen_riscv_cv_andv2hi (v0, v1, v2));
+		DONE;
+	})
 
 
-(define_insn "riscv_cv_simd_and_b_si"
-	[(set (match_operand:SI 0 "register_operand" "=r")
-		(unspec:SI [(match_operand:SI 1 "register_operand" "r")
-		(match_operand:SI 2 "register_operand" "r")]
-	UNSPEC_CV_AND_B))]
+(define_insn "riscv_cv_andv4qi"
+	[(set (match_operand:V4QI 0 "register_operand" "=r")
+		(and:V4QI (match_operand:V4QI 1 "register_operand" "r")
+		(match_operand:V4QI 2 "register_operand" "r")))]
 	"TARGET_XCVSIMD && !TARGET_64BIT"
 	"cv.and.b\t%0,%1,%2"
 	[(set_attr "type" "arith")
-	(set_attr "mode" "SI")])
+	(set_attr "mode" "V4QI")])
+
+(define_expand "riscv_cv_simd_and_b_si"
+	[(match_operand:SI 0 "register_operand")
+		(match_operand:SI 1 "register_operand")
+		(match_operand:SI 2 "register_operand")]
+	"TARGET_XCVSIMD && !TARGET_64BIT" {
+		rtx v0 = gen_lowpart(V4QImode, operands[0]);
+		rtx v1 = gen_lowpart(V4QImode, operands[1]);
+		rtx v2 = gen_lowpart(V4QImode, operands[2]);
+		emit_insn (gen_riscv_cv_andv4qi (v0, v1, v2));
+		DONE;
+	})
+
 
 
 (define_insn "riscv_cv_simd_and_sc_h_si"

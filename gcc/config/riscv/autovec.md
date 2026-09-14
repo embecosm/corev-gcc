@@ -453,7 +453,7 @@
       (match_operand:V_VLSI 1 "<binop_rhs1_predicate>")
       (match_operand:V_VLSI 2 "<binop_rhs2_predicate>")))]
   "(TARGET_VECTOR && can_create_pseudo_p ())
-   ||   (TARGET_XCVSIMD && (<MODE>mode == V4QImode || <MODE>mode == V2HImode) && (<CODE> == PLUS || <CODE> == MINUS))"
+   ||   (TARGET_XCVSIMD && (<MODE>mode == V4QImode || <MODE>mode == V2HImode) && (<CODE> == PLUS || <CODE> == MINUS || <CODE> == IOR || <CODE> == XOR || <CODE> == AND))"
 {
   if (TARGET_XCVSIMD && !TARGET_VECTOR
       && <MODE>mode == V4QImode && <CODE> == PLUS
@@ -483,6 +483,36 @@
       DONE;
     }
 
+  if (TARGET_XCVSIMD && !TARGET_VECTOR && <MODE>mode == V4QImode && <CODE> == IOR
+    && register_operand (operands[1], V4QImode) && register_operand (operands[2], V4QImode)) {
+      emit_insn (gen_riscv_cv_orv4qi (operands[0], operands[1], operands[2]));
+      DONE;
+    }
+  if (TARGET_XCVSIMD && !TARGET_VECTOR && <MODE>mode == V2HImode && <CODE> == IOR
+    && register_operand (operands[1], V2HImode) && register_operand (operands[2], V2HImode)) {
+      emit_insn (gen_riscv_cv_orv2hi (operands[0], operands[1], operands[2]));
+      DONE;
+    }
+  if (TARGET_XCVSIMD && !TARGET_VECTOR && <MODE>mode == V4QImode && <CODE> == XOR
+    && register_operand (operands[1], V4QImode) && register_operand (operands[2], V4QImode)) {
+      emit_insn (gen_riscv_cv_xorv4qi (operands[0], operands[1], operands[2]));
+      DONE;
+    }
+  if (TARGET_XCVSIMD && !TARGET_VECTOR && <MODE>mode == V2HImode && <CODE> == XOR
+    && register_operand (operands[1], V2HImode) && register_operand (operands[2], V2HImode)) {
+      emit_insn (gen_riscv_cv_xorv2hi (operands[0], operands[1], operands[2]));
+      DONE;
+    }
+  if (TARGET_XCVSIMD && !TARGET_VECTOR && <MODE>mode == V4QImode && <CODE> == AND
+    && register_operand (operands[1], V4QImode) && register_operand (operands[2], V4QImode)) {
+      emit_insn (gen_riscv_cv_andv4qi (operands[0], operands[1], operands[2]));
+      DONE;
+    }
+  if (TARGET_XCVSIMD && !TARGET_VECTOR && <MODE>mode == V2HImode && <CODE> == AND
+    && register_operand (operands[1], V2HImode) && register_operand (operands[2], V2HImode)) {
+      emit_insn (gen_riscv_cv_andv2hi (operands[0], operands[1], operands[2]));
+      DONE;
+    }
 })
 
 (define_insn_and_split "<optab><mode>3_internal"
