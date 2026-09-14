@@ -1228,26 +1228,43 @@
 	(set_attr "mode" "SI")])
 
 
-(define_insn "riscv_cv_simd_avg_h_si"
-	[(set (match_operand:SI 0 "register_operand" "=r")
-		(unspec:SI [(match_operand:SI 1 "register_operand" "r")
-		(match_operand:SI 2 "register_operand" "r")]
-	UNSPEC_CV_AVG_H))]
-	"TARGET_XCVSIMD && !TARGET_64BIT"
-	"cv.avg.h\t%0,%1,%2"
-	[(set_attr "type" "arith")
-	(set_attr "mode" "SI")])
+(define_insn "riscv_cv_avgv2hi"
+  	[(set (match_operand:V2HI 0 "register_operand" "=r")
+        (ashiftrt:V2HI
+          	(plus:V2HI (match_operand:V2HI 1 "register_operand" "r")
+                (match_operand:V2HI 2 "register_operand" "r"))
+          	(const_int 1)))]
+  	"TARGET_XCVSIMD && !TARGET_64BIT"
+  	"cv.avg.h\t%0,%1,%2"
+  	[(set_attr "type" "arith")
+   	(set_attr "mode" "V2HI")])
 
+(define_expand "riscv_cv_simd_avg_h_si"
+  	[(match_operand:SI 0 "register_operand")
+   	(match_operand:SI 1 "register_operand")
+   	(match_operand:SI 2 "register_operand")]
+  	"TARGET_XCVSIMD && !TARGET_64BIT"
+{
+  	rtx v0 = gen_lowpart (V2HImode, operands[0]);
+  	rtx v1 = gen_lowpart (V2HImode, operands[1]);
+  	rtx v2 = gen_lowpart (V2HImode, operands[2]);
+  	emit_insn (gen_riscv_cv_avgv2hi (v0, v1, v2));
+  	DONE;
+})
 
-(define_insn "riscv_cv_simd_avg_b_si"
-	[(set (match_operand:SI 0 "register_operand" "=r")
-		(unspec:SI [(match_operand:SI 1 "register_operand" "r")
-		(match_operand:SI 2 "register_operand" "r")]
-	UNSPEC_CV_AVG_B))]
-	"TARGET_XCVSIMD && !TARGET_64BIT"
-	"cv.avg.b\t%0,%1,%2"
-	[(set_attr "type" "arith")
-	(set_attr "mode" "SI")])
+(define_expand "riscv_cv_simd_avg_b_si"
+  	[(match_operand:SI 0 "register_operand")
+   	(match_operand:SI 1 "register_operand")
+   	(match_operand:SI 2 "register_operand")]
+  	"TARGET_XCVSIMD && !TARGET_64BIT"
+{
+  	rtx v0 = gen_lowpart (V4QImode, operands[0]);
+  	rtx v1 = gen_lowpart (V4QImode, operands[1]);
+  	rtx v2 = gen_lowpart (V4QImode, operands[2]);
+  	emit_insn (gen_riscv_cv_avgv4qi (v0, v1, v2));
+  	DONE;
+})
+
 
 
 (define_insn "riscv_cv_simd_avg_sc_h_si"
@@ -1322,6 +1339,42 @@
 	 cv.avgu.sc.b\t%0,%1,%2"
 	[(set_attr "type" "arith")
 	(set_attr "mode" "SI")])
+
+
+
+(define_insn "riscv_cv_avgv4qi"
+  	[(set (match_operand:V4QI 0 "register_operand" "=r")
+        (ashiftrt:V4QI
+          	(plus:V4QI (match_operand:V4QI 1 "register_operand" "r")
+                (match_operand:V4QI 2 "register_operand" "r"))
+          	(const_int 1)))]
+  	"TARGET_XCVSIMD && !TARGET_64BIT"
+  	"cv.avg.b\t%0,%1,%2"
+  	[(set_attr "type" "arith")
+   	(set_attr "mode" "V4QI")])
+
+(define_insn "riscv_cv_avguv4qi"
+  	[(set (match_operand:V4QI 0 "register_operand" "=r")
+        (lshiftrt:V4QI
+          	(plus:V4QI (match_operand:V4QI 1 "register_operand" "r")
+                (match_operand:V4QI 2 "register_operand" "r"))
+          	(const_int 1)))]
+  	"TARGET_XCVSIMD && !TARGET_64BIT"
+  	"cv.avgu.b\t%0,%1,%2"
+  	[(set_attr "type" "arith")
+   	(set_attr "mode" "V4QI")])
+
+(define_insn "riscv_cv_avguv2hi"
+  	[(set (match_operand:V2HI 0 "register_operand" "=r")
+        (lshiftrt:V2HI
+          	(plus:V2HI (match_operand:V2HI 1 "register_operand" "r")
+                (match_operand:V2HI 2 "register_operand" "r"))
+          	(const_int 1)))]
+  	"TARGET_XCVSIMD && !TARGET_64BIT"
+  	"cv.avgu.h\t%0,%1,%2"
+  	[(set_attr "type" "arith")
+   	(set_attr "mode" "V2HI")])
+
 
 
 (define_insn "riscv_cv_simd_min_h_si"
