@@ -1240,10 +1240,26 @@
 ;; - [INT] ABS expansion to vmslt and vneg.
 ;; -------------------------------------------------------------------------------
 
-(define_insn_and_split "abs<mode>2"
+(define_expand "abs<mode>2"
   [(set (match_operand:V_VLSI 0 "register_operand")
-     (abs:V_VLSI
-       (match_operand:V_VLSI 1 "register_operand")))]
+    (abs:V_VLSI (match_operand:V_VLSI 1 "register_operand")))]
+  "(TARGET_VECTOR && can_create_pseudo_p ()) || (TARGET_XCVSIMD && !TARGET_VECTOR&& (<MODE>mode == V4QImode || <MODE>mode == V2HImode))"
+{
+  if (TARGET_XCVSIMD && !TARGET_VECTOR && <MODE>mode == V4QImode && register_operand (operands[1], V4QImode)) {
+      emit_insn (gen_riscv_cv_absv4qi (operands[0], operands[1]));
+      DONE;
+    }
+  if (TARGET_XCVSIMD && !TARGET_VECTOR && <MODE>mode == V2HImode && register_operand (operands[1], V2HImode)) {
+      emit_insn (gen_riscv_cv_absv2hi (operands[0], operands[1]));
+      DONE;
+    }
+  emit_insn (gen_abs<mode>2_internal (operands[0], operands[1]));
+  DONE;
+})
+
+(define_insn_and_split "abs<mode>2_internal"
+  [(set (match_operand:V_VLSI 0 "register_operand")
+     (abs:V_VLSI (match_operand:V_VLSI 1 "register_operand")))]
   "TARGET_VECTOR && can_create_pseudo_p ()"
   "#"
   "&& 1"

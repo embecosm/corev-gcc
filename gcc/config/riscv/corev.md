@@ -1552,6 +1552,22 @@
   	DONE;
 })
 
+(define_insn "riscv_cv_absv4qi"
+  	[(set (match_operand:V4QI 0 "register_operand" "=r")
+        (abs:V4QI (match_operand:V4QI 1 "register_operand" "r")))]
+  	"TARGET_XCVSIMD && !TARGET_64BIT"
+  	"cv.abs.b\t%0,%1"
+  	[(set_attr "type" "arith")
+   	(set_attr "mode" "V4QI")])
+
+(define_insn "riscv_cv_absv2hi"
+  	[(set (match_operand:V2HI 0 "register_operand" "=r")
+        (abs:V2HI (match_operand:V2HI 1 "register_operand" "r")))]
+  	"TARGET_XCVSIMD && !TARGET_64BIT"
+  	"cv.abs.h\t%0,%1"
+  	[(set_attr "type" "arith")
+   	(set_attr "mode" "V2HI")])
+
 
 (define_insn "riscv_cv_simd_min_sc_h_si"
 	[(set (match_operand:SI 0 "register_operand" "=r,r")
@@ -2017,22 +2033,27 @@
 	(set_attr "mode" "SI")])
 
 
-(define_insn "riscv_cv_simd_abs_h_si"
-	[(set (match_operand:SI 0 "register_operand" "=r")
-		(unspec:SI [(match_operand:SI 1 "register_operand" "r")]UNSPEC_CV_ABS_H))]
-	"TARGET_XCVSIMD && !TARGET_64BIT"
-	"cv.abs.h\t%0,%1"
-	[(set_attr "type" "arith")
-	(set_attr "mode" "SI")])
+(define_expand "riscv_cv_simd_abs_b_si"
+  	[(match_operand:SI 0 "register_operand")
+   	(match_operand:SI 1 "register_operand")]
+  	"TARGET_XCVSIMD && !TARGET_64BIT"
+{
+  	rtx v0 = gen_lowpart(V4QImode, operands[0]);
+  	rtx v1 = gen_lowpart(V4QImode, operands[1]);
+ 	emit_insn (gen_riscv_cv_absv4qi (v0, v1));
+  	DONE;
+})
 
-
-(define_insn "riscv_cv_simd_abs_b_si"
-	[(set (match_operand:SI 0 "register_operand" "=r")
-		(unspec:SI [(match_operand:SI 1 "register_operand" "r")]UNSPEC_CV_ABS_B))]
-	"TARGET_XCVSIMD && !TARGET_64BIT"
-	"cv.abs.b\t%0,%1"
-	[(set_attr "type" "arith")
-	(set_attr "mode" "SI")])
+(define_expand "riscv_cv_simd_abs_h_si"
+  	[(match_operand:SI 0 "register_operand")
+   	(match_operand:SI 1 "register_operand")]
+  	"TARGET_XCVSIMD && !TARGET_64BIT"
+{
+  	rtx v0 = gen_lowpart(V2HImode, operands[0]);
+  	rtx v1 = gen_lowpart(V2HImode, operands[1]);
+  	emit_insn (gen_riscv_cv_absv2hi (v0, v1));
+  	DONE;
+})
 
 
 (define_insn "riscv_cv_simd_neg_h_si"
