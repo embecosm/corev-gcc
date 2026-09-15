@@ -1340,8 +1340,6 @@
 	[(set_attr "type" "arith")
 	(set_attr "mode" "SI")])
 
-
-
 (define_insn "riscv_cv_avgv4qi"
   	[(set (match_operand:V4QI 0 "register_operand" "=r")
         (ashiftrt:V4QI
@@ -1376,27 +1374,183 @@
    	(set_attr "mode" "V2HI")])
 
 
+(define_insn "riscv_cv_minv4qi"
+  	[(set (match_operand:V4QI 0 "register_operand" "=r")
+        (smin:V4QI (match_operand:V4QI 1 "register_operand" "r")
+        (match_operand:V4QI 2 "register_operand" "r")))]
+  	"TARGET_XCVSIMD && !TARGET_64BIT"
+  	"cv.min.b\t%0,%1,%2"
+  	[(set_attr "type" "arith")
+   	(set_attr "mode" "V4QI")])
 
-(define_insn "riscv_cv_simd_min_h_si"
-	[(set (match_operand:SI 0 "register_operand" "=r")
-		(unspec:SI [(match_operand:SI 1 "register_operand" "r")
-		(match_operand:SI 2 "register_operand" "r")]
-	UNSPEC_CV_MIN_H))]
-	"TARGET_XCVSIMD && !TARGET_64BIT"
-	"cv.min.h\t%0,%1,%2"
-	[(set_attr "type" "arith")
-	(set_attr "mode" "SI")])
+(define_expand "riscv_cv_simd_min_b_si"
+  	[(match_operand:SI 0 "register_operand")
+   	(match_operand:SI 1 "register_operand")
+   	(match_operand:SI 2 "register_operand")]
+  	"TARGET_XCVSIMD && !TARGET_64BIT" 
+{
+  	rtx v0 = gen_lowpart(V4QImode, operands[0]);
+  	rtx v1 = gen_lowpart(V4QImode, operands[1]);
+  	rtx v2 = gen_lowpart(V4QImode, operands[2]);
+  	emit_insn (gen_riscv_cv_minv4qi (v0, v1, v2));
+  	DONE;
+})
+
+(define_insn "riscv_cv_minuv4qi"
+  	[(set (match_operand:V4QI 0 "register_operand" "=r")
+        (umin:V4QI (match_operand:V4QI 1 "register_operand" "r")
+        (match_operand:V4QI 2 "register_operand" "r")))]
+  	"TARGET_XCVSIMD && !TARGET_64BIT"
+  	"cv.minu.b\t%0,%1,%2"
+  	[(set_attr "type" "arith")
+   	(set_attr "mode" "V4QI")])
+
+(define_expand "riscv_cv_simd_minu_b_si"
+  	[(match_operand:SI 0 "register_operand")
+   	(match_operand:SI 1 "register_operand")
+   	(match_operand:SI 2 "register_operand")]
+  	"TARGET_XCVSIMD && !TARGET_64BIT" 
+{
+  	rtx v0 = gen_lowpart(V4QImode, operands[0]);
+  	rtx v1 = gen_lowpart(V4QImode, operands[1]);
+  	rtx v2 = gen_lowpart(V4QImode, operands[2]);
+  	emit_insn (gen_riscv_cv_minuv4qi (v0, v1, v2));
+  	DONE;	
+})
+
+(define_insn "riscv_cv_maxv4qi"
+  	[(set (match_operand:V4QI 0 "register_operand" "=r")
+        (smax:V4QI (match_operand:V4QI 1 "register_operand" "r")
+        (match_operand:V4QI 2 "register_operand" "r")))]
+  	"TARGET_XCVSIMD && !TARGET_64BIT"
+  	"cv.max.b\t%0,%1,%2"
+  	[(set_attr "type" "arith")
+   	(set_attr "mode" "V4QI")])
+
+(define_expand "riscv_cv_simd_max_b_si"
+  	[(match_operand:SI 0 "register_operand")
+   	(match_operand:SI 1 "register_operand")
+   	(match_operand:SI 2 "register_operand")]
+  	"TARGET_XCVSIMD && !TARGET_64BIT"
+{
+  	rtx v0 = gen_lowpart(V4QImode, operands[0]);
+  	rtx v1 = gen_lowpart(V4QImode, operands[1]);
+  	rtx v2 = gen_lowpart(V4QImode, operands[2]);
+  	emit_insn (gen_riscv_cv_maxv4qi (v0, v1, v2));
+  	DONE;
+})
+
+(define_insn "riscv_cv_maxuv4qi"
+  	[(set (match_operand:V4QI 0 "register_operand" "=r")
+        (umax:V4QI (match_operand:V4QI 1 "register_operand" "r")
+        (match_operand:V4QI 2 "register_operand" "r")))]
+  	"TARGET_XCVSIMD && !TARGET_64BIT"
+  	"cv.maxu.b\t%0,%1,%2"
+  	[(set_attr "type" "arith")
+   	(set_attr "mode" "V4QI")])
+
+(define_expand "riscv_cv_simd_maxu_b_si"
+  	[(match_operand:SI 0 "register_operand")
+   	(match_operand:SI 1 "register_operand")
+   	(match_operand:SI 2 "register_operand")]
+  	"TARGET_XCVSIMD && !TARGET_64BIT"
+{
+  	rtx v0 = gen_lowpart(V4QImode, operands[0]);
+  	rtx v1 = gen_lowpart(V4QImode, operands[1]);
+  	rtx v2 = gen_lowpart(V4QImode, operands[2]);
+  	emit_insn (gen_riscv_cv_maxuv4qi (v0, v1, v2));
+  	DONE;
+})
 
 
-(define_insn "riscv_cv_simd_min_b_si"
-	[(set (match_operand:SI 0 "register_operand" "=r")
-		(unspec:SI [(match_operand:SI 1 "register_operand" "r")
-		(match_operand:SI 2 "register_operand" "r")]
-	UNSPEC_CV_MIN_B))]
-	"TARGET_XCVSIMD && !TARGET_64BIT"
-	"cv.min.b\t%0,%1,%2"
-	[(set_attr "type" "arith")
-	(set_attr "mode" "SI")])
+
+(define_insn "riscv_cv_minv2hi"
+  	[(set (match_operand:V2HI 0 "register_operand" "=r")
+        (smin:V2HI (match_operand:V2HI 1 "register_operand" "r")
+        (match_operand:V2HI 2 "register_operand" "r")))]
+  	"TARGET_XCVSIMD && !TARGET_64BIT"
+  	"cv.min.h\t%0,%1,%2"
+  	[(set_attr "type" "arith")
+   	(set_attr "mode" "V2HI")])
+
+(define_expand "riscv_cv_simd_min_h_si"
+  	[(match_operand:SI 0 "register_operand")
+   	(match_operand:SI 1 "register_operand")
+   	(match_operand:SI 2 "register_operand")]
+  	"TARGET_XCVSIMD && !TARGET_64BIT"
+{
+  	rtx v0 = gen_lowpart(V2HImode, operands[0]);
+  	rtx v1 = gen_lowpart(V2HImode, operands[1]);
+  	rtx v2 = gen_lowpart(V2HImode, operands[2]);
+  	emit_insn (gen_riscv_cv_minv2hi (v0, v1, v2));
+  	DONE;
+})
+
+(define_insn "riscv_cv_minuv2hi"
+  	[(set (match_operand:V2HI 0 "register_operand" "=r")
+        (umin:V2HI (match_operand:V2HI 1 "register_operand" "r")
+        (match_operand:V2HI 2 "register_operand" "r")))]
+  	"TARGET_XCVSIMD && !TARGET_64BIT"
+  	"cv.minu.h\t%0,%1,%2"
+  	[(set_attr "type" "arith")
+   	(set_attr "mode" "V2HI")])
+
+(define_expand "riscv_cv_simd_minu_h_si"
+  	[(match_operand:SI 0 "register_operand")
+   	(match_operand:SI 1 "register_operand")
+   	(match_operand:SI 2 "register_operand")]
+  	"TARGET_XCVSIMD && !TARGET_64BIT"
+{
+  	rtx v0 = gen_lowpart(V2HImode, operands[0]);
+  	rtx v1 = gen_lowpart(V2HImode, operands[1]);
+  	rtx v2 = gen_lowpart(V2HImode, operands[2]);
+  	emit_insn (gen_riscv_cv_minuv2hi (v0, v1, v2));
+  	DONE;
+})
+
+(define_insn "riscv_cv_maxv2hi"
+  	[(set (match_operand:V2HI 0 "register_operand" "=r")
+        (smax:V2HI (match_operand:V2HI 1 "register_operand" "r")
+        (match_operand:V2HI 2 "register_operand" "r")))]
+  	"TARGET_XCVSIMD && !TARGET_64BIT"
+  	"cv.max.h\t%0,%1,%2"
+  	[(set_attr "type" "arith")
+   	(set_attr "mode" "V2HI")])
+
+(define_expand "riscv_cv_simd_max_h_si"
+  	[(match_operand:SI 0 "register_operand")
+   	(match_operand:SI 1 "register_operand")
+   	(match_operand:SI 2 "register_operand")]
+  	"TARGET_XCVSIMD && !TARGET_64BIT"
+{
+  	rtx v0 = gen_lowpart(V2HImode, operands[0]);
+  	rtx v1 = gen_lowpart(V2HImode, operands[1]);
+  	rtx v2 = gen_lowpart(V2HImode, operands[2]);
+  	emit_insn (gen_riscv_cv_maxv2hi (v0, v1, v2));
+  	DONE;
+})
+
+(define_insn "riscv_cv_maxuv2hi"
+  	[(set (match_operand:V2HI 0 "register_operand" "=r")
+        (umax:V2HI (match_operand:V2HI 1 "register_operand" "r")
+        (match_operand:V2HI 2 "register_operand" "r")))]
+  	"TARGET_XCVSIMD && !TARGET_64BIT"
+  	"cv.maxu.h\t%0,%1,%2"
+  	[(set_attr "type" "arith")
+   	(set_attr "mode" "V2HI")])
+
+(define_expand "riscv_cv_simd_maxu_h_si"
+  	[(match_operand:SI 0 "register_operand")
+   	(match_operand:SI 1 "register_operand")
+   	(match_operand:SI 2 "register_operand")]
+  	"TARGET_XCVSIMD && !TARGET_64BIT"
+{
+  	rtx v0 = gen_lowpart(V2HImode, operands[0]);
+  	rtx v1 = gen_lowpart(V2HImode, operands[1]);
+  	rtx v2 = gen_lowpart(V2HImode, operands[2]);
+  	emit_insn (gen_riscv_cv_maxuv2hi (v0, v1, v2));
+  	DONE;
+})
 
 
 (define_insn "riscv_cv_simd_min_sc_h_si"
@@ -1425,27 +1579,6 @@
 	(set_attr "mode" "SI")])
 
 
-(define_insn "riscv_cv_simd_minu_h_si"
-	[(set (match_operand:SI 0 "register_operand" "=r")
-		(unspec:SI [(match_operand:SI 1 "register_operand" "r")
-		(match_operand:SI 2 "register_operand" "r")]
-	UNSPEC_CV_MINU_H))]
-	"TARGET_XCVSIMD && !TARGET_64BIT"
-	"cv.minu.h\t%0,%1,%2"
-	[(set_attr "type" "arith")
-	(set_attr "mode" "SI")])
-
-
-(define_insn "riscv_cv_simd_minu_b_si"
-	[(set (match_operand:SI 0 "register_operand" "=r")
-		(unspec:SI [(match_operand:SI 1 "register_operand" "r")
-		(match_operand:SI 2 "register_operand" "r")]
-	UNSPEC_CV_MINU_B))]
-	"TARGET_XCVSIMD && !TARGET_64BIT"
-	"cv.minu.b\t%0,%1,%2"
-	[(set_attr "type" "arith")
-	(set_attr "mode" "SI")])
-
 
 (define_insn "riscv_cv_simd_minu_sc_h_si"
 	[(set (match_operand:SI 0 "register_operand" "=r,r")
@@ -1473,28 +1606,6 @@
 	(set_attr "mode" "SI")])
 
 
-(define_insn "riscv_cv_simd_max_h_si"
-	[(set (match_operand:SI 0 "register_operand" "=r")
-		(unspec:SI [(match_operand:SI 1 "register_operand" "r")
-		(match_operand:SI 2 "register_operand" "r")]
-	UNSPEC_CV_MAX_H))]
-	"TARGET_XCVSIMD && !TARGET_64BIT"
-	"cv.max.h\t%0,%1,%2"
-	[(set_attr "type" "arith")
-	(set_attr "mode" "SI")])
-
-
-(define_insn "riscv_cv_simd_max_b_si"
-	[(set (match_operand:SI 0 "register_operand" "=r")
-		(unspec:SI [(match_operand:SI 1 "register_operand" "r")
-		(match_operand:SI 2 "register_operand" "r")]
-	UNSPEC_CV_MAX_B))]
-	"TARGET_XCVSIMD && !TARGET_64BIT"
-	"cv.max.b\t%0,%1,%2"
-	[(set_attr "type" "arith")
-	(set_attr "mode" "SI")])
-
-
 (define_insn "riscv_cv_simd_max_sc_h_si"
 	[(set (match_operand:SI 0 "register_operand" "=r,r")
 		(unspec:SI [(match_operand:SI 1 "register_operand" "r,r")
@@ -1517,28 +1628,6 @@
 	"@
 	 cv.max.sci.b\t%0,%1,%2
 	 cv.max.sc.b\t%0,%1,%2"
-	[(set_attr "type" "arith")
-	(set_attr "mode" "SI")])
-
-
-(define_insn "riscv_cv_simd_maxu_h_si"
-	[(set (match_operand:SI 0 "register_operand" "=r")
-		(unspec:SI [(match_operand:SI 1 "register_operand" "r")
-		(match_operand:SI 2 "register_operand" "r")]
-	UNSPEC_CV_MAXU_H))]
-	"TARGET_XCVSIMD && !TARGET_64BIT"
-	"cv.maxu.h\t%0,%1,%2"
-	[(set_attr "type" "arith")
-	(set_attr "mode" "SI")])
-
-
-(define_insn "riscv_cv_simd_maxu_b_si"
-	[(set (match_operand:SI 0 "register_operand" "=r")
-		(unspec:SI [(match_operand:SI 1 "register_operand" "r")
-		(match_operand:SI 2 "register_operand" "r")]
-	UNSPEC_CV_MAXU_B))]
-	"TARGET_XCVSIMD && !TARGET_64BIT"
-	"cv.maxu.b\t%0,%1,%2"
 	[(set_attr "type" "arith")
 	(set_attr "mode" "SI")])
 
@@ -1962,6 +2051,16 @@
         "cv.sub.b\t%0,zero,%1"
         [(set_attr "type" "arith")
         (set_attr "mode" "SI")])
+
+
+(define_insn "riscv_cv_add_scv4qi"
+	[(set (match_operand:V4QI 0 "register_operand" "=r")
+		(plus:V4QI (match_operand:V4QI 1 "register_operand" "r")
+		(vec_duplicate:V4QI (match_operand:QI 2 "register_operand" "r"))))]
+	"TARGET_XCVSIMD && !TARGET_64BIT"
+	"cv.add.sc.b\t%0,%1,%2"
+	[(set_attr "type" "arith")
+	(set_attr "mode" "V4QI")])
 
 
 ;;CORE-V SIMD BIT MANIPULATION
