@@ -1408,7 +1408,7 @@
   [(set (match_operand:V_VLS 0 "register_operand")
         (vec_duplicate:V_VLS
           (match_operand:<VEL> 1 "direct_broadcast_operand")))]
-  "TARGET_VECTOR"
+  "TARGET_VECTOR || (TARGET_XCVSIMD && !TARGET_VECTOR && (<MODE>mode == V4QImode || <MODE>mode == V2HImode))"
   {
     /* Early expand DImode broadcast in RV32 system to avoid RA reload
        generate (set (reg) (vec_duplicate:DI)).  */
@@ -1420,6 +1420,15 @@
       }
     /* Otherwise, allow it fall into general vec_duplicate pattern
        which allow us to have vv->vx combine optimization in later pass.  */
+	
+	if (TARGET_XCVSIMD && !TARGET_VECTOR && <MODE>mode == V4QImode) {
+      emit_insn (gen_riscv_cv_broadcastv4qi (operands[0], operands[1]));
+      DONE;
+    }
+  	if (TARGET_XCVSIMD && !TARGET_VECTOR && <MODE>mode == V2HImode) {
+      emit_insn (gen_riscv_cv_broadcastv2hi (operands[0], operands[1]));
+      DONE;
+    }
   })
 
 ;; According to GCC internal:

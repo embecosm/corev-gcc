@@ -454,105 +454,136 @@
       (match_operand:V_VLSI 2 "<binop_rhs2_predicate>")))]
   "(TARGET_VECTOR && can_create_pseudo_p ())
    ||   (TARGET_XCVSIMD && (<MODE>mode == V4QImode || <MODE>mode == V2HImode) && (<CODE> == PLUS || <CODE> == MINUS || <CODE> == IOR || <CODE> == XOR || <CODE> == AND || <CODE> == SMIN || <CODE> == UMIN || <CODE> == SMAX || <CODE> == UMAX))"
+
 {
-  if (TARGET_XCVSIMD && !TARGET_VECTOR
-      && <MODE>mode == V4QImode && <CODE> == PLUS
-      && register_operand (operands[1], V4QImode)
-      && register_operand (operands[2], V4QImode))
+  if (TARGET_XCVSIMD && !TARGET_VECTOR && <MODE>mode == V4QImode && <CODE> == PLUS)
     {
-      emit_insn (gen_riscv_cv_addv4qi (operands[0], operands[1], operands[2]));
+      rtx op1 = force_reg (V4QImode, operands[1]);
+      rtx op2 = force_reg (V4QImode, operands[2]);
+      emit_insn (gen_riscv_cv_addv4qi (operands[0], op1, op2));
       DONE;
     }
-  if (TARGET_XCVSIMD && !TARGET_VECTOR
-      && <MODE>mode == V2HImode && <CODE> == PLUS
-      && register_operand (operands[1], V2HImode)
-      && register_operand (operands[2], V2HImode))
+  if (TARGET_XCVSIMD && !TARGET_VECTOR && <MODE>mode == V2HImode && <CODE> == PLUS)
     {
-      emit_insn (gen_riscv_cv_addv2hi (operands[0], operands[1], operands[2]));
+      rtx op1 = force_reg (V2HImode, operands[1]);
+      rtx op2 = force_reg (V2HImode, operands[2]);
+      emit_insn (gen_riscv_cv_addv2hi (operands[0], op1, op2));
+      DONE;
+    }
+  if (TARGET_XCVSIMD && !TARGET_VECTOR && <MODE>mode == V4QImode && <CODE> == MINUS)
+    {
+      rtx op1 = force_reg (V4QImode, operands[1]);
+      rtx op2 = force_reg (V4QImode, operands[2]);
+      emit_insn (gen_riscv_cv_subv4qi (operands[0], op1, op2));
+      DONE;
+    }
+  if (TARGET_XCVSIMD && !TARGET_VECTOR && <MODE>mode == V2HImode && <CODE> == MINUS)
+    {
+      rtx op1 = force_reg (V2HImode, operands[1]);
+      rtx op2 = force_reg (V2HImode, operands[2]);
+      emit_insn (gen_riscv_cv_subv2hi (operands[0], op1, op2));
+      DONE;
+    }
+  if (TARGET_XCVSIMD && !TARGET_VECTOR && <MODE>mode == V4QImode && <CODE> == IOR)
+    {
+      rtx op1 = force_reg (V4QImode, operands[1]);
+      rtx op2 = force_reg (V4QImode, operands[2]);
+      emit_insn (gen_riscv_cv_orv4qi (operands[0], op1, op2));
+      DONE;
+    }
+  if (TARGET_XCVSIMD && !TARGET_VECTOR && <MODE>mode == V2HImode && <CODE> == IOR)
+    {
+      rtx op1 = force_reg (V2HImode, operands[1]);
+      rtx op2 = force_reg (V2HImode, operands[2]);
+      emit_insn (gen_riscv_cv_orv2hi (operands[0], op1, op2));
+      DONE;
+    }
+  if (TARGET_XCVSIMD && !TARGET_VECTOR && <MODE>mode == V4QImode && <CODE> == XOR)
+    {
+      rtx op1 = force_reg (V4QImode, operands[1]);
+      rtx op2 = force_reg (V4QImode, operands[2]);
+      emit_insn (gen_riscv_cv_xorv4qi (operands[0], op1, op2));
+      DONE;
+    }
+  if (TARGET_XCVSIMD && !TARGET_VECTOR && <MODE>mode == V2HImode && <CODE> == XOR)
+    {
+      rtx op1 = force_reg (V2HImode, operands[1]);
+      rtx op2 = force_reg (V2HImode, operands[2]);
+      emit_insn (gen_riscv_cv_xorv2hi (operands[0], op1, op2));
+      DONE;
+    }
+  if (TARGET_XCVSIMD && !TARGET_VECTOR && <MODE>mode == V4QImode && <CODE> == AND)
+    {
+      rtx op1 = force_reg (V4QImode, operands[1]);
+      rtx op2 = force_reg (V4QImode, operands[2]);
+      emit_insn (gen_riscv_cv_andv4qi (operands[0], op1, op2));
+      DONE;
+    }
+  if (TARGET_XCVSIMD && !TARGET_VECTOR && <MODE>mode == V2HImode && <CODE> == AND)
+    {
+      rtx op1 = force_reg (V2HImode, operands[1]);
+      rtx op2 = force_reg (V2HImode, operands[2]);
+      emit_insn (gen_riscv_cv_andv2hi (operands[0], op1, op2));
+      DONE;
+    }
+  if (TARGET_XCVSIMD && !TARGET_VECTOR && <MODE>mode == V4QImode && <CODE> == SMIN)
+    {
+      rtx op1 = force_reg (V4QImode, operands[1]);
+      rtx op2 = force_reg (V4QImode, operands[2]);
+      emit_insn (gen_riscv_cv_minv4qi (operands[0], op1, op2));
+      DONE;
+    }
+  if (TARGET_XCVSIMD && !TARGET_VECTOR && <MODE>mode == V2HImode && <CODE> == SMIN)
+    {
+      rtx op1 = force_reg (V2HImode, operands[1]);
+      rtx op2 = force_reg (V2HImode, operands[2]);
+      emit_insn (gen_riscv_cv_minv2hi (operands[0], op1, op2));
+      DONE;
+    }
+  if (TARGET_XCVSIMD && !TARGET_VECTOR && <MODE>mode == V4QImode && <CODE> == UMIN)
+    {
+      rtx op1 = force_reg (V4QImode, operands[1]);
+      rtx op2 = force_reg (V4QImode, operands[2]);
+      emit_insn (gen_riscv_cv_minuv4qi (operands[0], op1, op2));
+      DONE;
+    }
+  if (TARGET_XCVSIMD && !TARGET_VECTOR && <MODE>mode == V2HImode && <CODE> == UMIN)
+    {
+      rtx op1 = force_reg (V2HImode, operands[1]);
+      rtx op2 = force_reg (V2HImode, operands[2]);
+      emit_insn (gen_riscv_cv_minuv2hi (operands[0], op1, op2));
+      DONE;
+    }
+  if (TARGET_XCVSIMD && !TARGET_VECTOR && <MODE>mode == V4QImode && <CODE> == SMAX)
+    {
+      rtx op1 = force_reg (V4QImode, operands[1]);
+      rtx op2 = force_reg (V4QImode, operands[2]);
+      emit_insn (gen_riscv_cv_maxv4qi (operands[0], op1, op2));
+      DONE;
+    }
+  if (TARGET_XCVSIMD && !TARGET_VECTOR && <MODE>mode == V2HImode && <CODE> == SMAX)
+    {
+      rtx op1 = force_reg (V2HImode, operands[1]);
+      rtx op2 = force_reg (V2HImode, operands[2]);
+      emit_insn (gen_riscv_cv_maxv2hi (operands[0], op1, op2));
+      DONE;
+    }
+  if (TARGET_XCVSIMD && !TARGET_VECTOR && <MODE>mode == V4QImode && <CODE> == UMAX)
+    {
+      rtx op1 = force_reg (V4QImode, operands[1]);
+      rtx op2 = force_reg (V4QImode, operands[2]);
+      emit_insn (gen_riscv_cv_maxuv4qi (operands[0], op1, op2));
+      DONE;
+    }
+  if (TARGET_XCVSIMD && !TARGET_VECTOR && <MODE>mode == V2HImode && <CODE> == UMAX)
+    {
+      rtx op1 = force_reg (V2HImode, operands[1]);
+      rtx op2 = force_reg (V2HImode, operands[2]);
+      emit_insn (gen_riscv_cv_maxuv2hi (operands[0], op1, op2));
       DONE;
     }
   emit_insn (gen_<optab><mode>3_internal (operands[0], operands[1], operands[2]));
   DONE;
-
-  if (TARGET_XCVSIMD && !TARGET_VECTOR && <MODE>mode == V4QImode && <CODE> == MINUS && register_operand (operands[1], V4QImode) && register_operand (operands[2], V4QImode)) {
-      emit_insn (gen_riscv_cv_subv4qi (operands[0], operands[1], operands[2]));
-      DONE;
-    }
-  if (TARGET_XCVSIMD && !TARGET_VECTOR && <MODE>mode == V2HImode && <CODE> == MINUS && register_operand (operands[1], V2HImode) && register_operand (operands[2], V2HImode)) {
-      emit_insn (gen_riscv_cv_subv2hi (operands[0], operands[1], operands[2]));
-      DONE;
-    }
-
-  if (TARGET_XCVSIMD && !TARGET_VECTOR && <MODE>mode == V4QImode && <CODE> == IOR
-    && register_operand (operands[1], V4QImode) && register_operand (operands[2], V4QImode)) {
-      emit_insn (gen_riscv_cv_orv4qi (operands[0], operands[1], operands[2]));
-      DONE;
-    }
-  if (TARGET_XCVSIMD && !TARGET_VECTOR && <MODE>mode == V2HImode && <CODE> == IOR
-    && register_operand (operands[1], V2HImode) && register_operand (operands[2], V2HImode)) {
-      emit_insn (gen_riscv_cv_orv2hi (operands[0], operands[1], operands[2]));
-      DONE;
-    }
-  if (TARGET_XCVSIMD && !TARGET_VECTOR && <MODE>mode == V4QImode && <CODE> == XOR
-    && register_operand (operands[1], V4QImode) && register_operand (operands[2], V4QImode)) {
-      emit_insn (gen_riscv_cv_xorv4qi (operands[0], operands[1], operands[2]));
-      DONE;
-    }
-  if (TARGET_XCVSIMD && !TARGET_VECTOR && <MODE>mode == V2HImode && <CODE> == XOR
-    && register_operand (operands[1], V2HImode) && register_operand (operands[2], V2HImode)) {
-      emit_insn (gen_riscv_cv_xorv2hi (operands[0], operands[1], operands[2]));
-      DONE;
-    }
-  if (TARGET_XCVSIMD && !TARGET_VECTOR && <MODE>mode == V4QImode && <CODE> == AND
-    && register_operand (operands[1], V4QImode) && register_operand (operands[2], V4QImode)) {
-      emit_insn (gen_riscv_cv_andv4qi (operands[0], operands[1], operands[2]));
-      DONE;
-    }
-  if (TARGET_XCVSIMD && !TARGET_VECTOR && <MODE>mode == V2HImode && <CODE> == AND
-    && register_operand (operands[1], V2HImode) && register_operand (operands[2], V2HImode)) {
-      emit_insn (gen_riscv_cv_andv2hi (operands[0], operands[1], operands[2]));
-      DONE;
-    }
-  if (TARGET_XCVSIMD && !TARGET_VECTOR && <MODE>mode == V4QImode && <CODE> == SMIN
-    && register_operand (operands[1], V4QImode) && register_operand (operands[2], V4QImode)) {
-      emit_insn (gen_riscv_cv_minv4qi (operands[0], operands[1], operands[2]));
-      DONE;
-    }
-  if (TARGET_XCVSIMD && !TARGET_VECTOR && <MODE>mode == V2HImode && <CODE> == SMIN
-    && register_operand (operands[1], V2HImode) && register_operand (operands[2], V2HImode)) {
-      emit_insn (gen_riscv_cv_minv2hi (operands[0], operands[1], operands[2]));
-      DONE;
-    }
-  if (TARGET_XCVSIMD && !TARGET_VECTOR && <MODE>mode == V4QImode && <CODE> == UMIN
-    && register_operand (operands[1], V4QImode) && register_operand (operands[2], V4QImode)) {
-      emit_insn (gen_riscv_cv_minuv4qi (operands[0], operands[1], operands[2]));
-      DONE;
-    }
-  if (TARGET_XCVSIMD && !TARGET_VECTOR && <MODE>mode == V2HImode && <CODE> == UMIN
-    && register_operand (operands[1], V2HImode) && register_operand (operands[2], V2HImode)) {
-      emit_insn (gen_riscv_cv_minuv2hi (operands[0], operands[1], operands[2]));
-      DONE;
-    }
-  if (TARGET_XCVSIMD && !TARGET_VECTOR && <MODE>mode == V4QImode && <CODE> == SMAX
-    && register_operand (operands[1], V4QImode) && register_operand (operands[2], V4QImode)) {
-      emit_insn (gen_riscv_cv_maxv4qi (operands[0], operands[1], operands[2]));
-      DONE;
-    }
-  if (TARGET_XCVSIMD && !TARGET_VECTOR && <MODE>mode == V2HImode && <CODE> == SMAX
-    && register_operand (operands[1], V2HImode) && register_operand (operands[2], V2HImode)) {
-      emit_insn (gen_riscv_cv_maxv2hi (operands[0], operands[1], operands[2]));
-      DONE;
-    }
-  if (TARGET_XCVSIMD && !TARGET_VECTOR && <MODE>mode == V4QImode && <CODE> == UMAX
-    && register_operand (operands[1], V4QImode) && register_operand (operands[2], V4QImode)) {
-      emit_insn (gen_riscv_cv_maxuv4qi (operands[0], operands[1], operands[2]));
-      DONE;
-    }
-  if (TARGET_XCVSIMD && !TARGET_VECTOR && <MODE>mode == V2HImode && <CODE> == UMAX
-    && register_operand (operands[1], V2HImode) && register_operand (operands[2], V2HImode)) {
-      emit_insn (gen_riscv_cv_maxuv2hi (operands[0], operands[1], operands[2]));
-      DONE;
-    }
 })
 
 (define_insn_and_split "<optab><mode>3_internal"

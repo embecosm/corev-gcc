@@ -2055,6 +2055,24 @@
   	DONE;
 })
 
+(define_insn "riscv_cv_broadcastv4qi"
+  	[(set (match_operand:V4QI 0 "register_operand" "=r")
+        (vec_duplicate:V4QI (match_operand:QI 1 "register_operand" "r")))
+   	(clobber (match_scratch:SI 2 "=&r"))]
+  	"TARGET_XCVSIMD && !TARGET_64BIT"
+  	"andi\t%0,%1,0xff\;slli\t%2,%0,8\;or\t%0,%0,%2\;slli\t%2,%0,16\;or\t%0,%0,%2"
+  	[(set_attr "type" "arith")
+   	(set_attr "mode" "V4QI")])
+
+(define_insn "riscv_cv_broadcastv2hi"
+  	[(set (match_operand:V2HI 0 "register_operand" "=r")
+        (vec_duplicate:V2HI (match_operand:HI 1 "register_operand" "r")))
+   	(clobber (match_scratch:SI 2 "=&r"))]
+  	"TARGET_XCVSIMD && !TARGET_64BIT"
+  	"slli\t%0,%1,16\;srli\t%0,%0,16\;slli\t%2,%0,16\;or\t%0,%0,%2"
+  	[(set_attr "type" "arith")
+   	(set_attr "mode" "V2HI")])
+
 
 (define_insn "riscv_cv_simd_neg_h_si"
         [(set (match_operand:SI 0 "register_operand" "=r")
@@ -2075,13 +2093,23 @@
 
 
 (define_insn "riscv_cv_add_scv4qi"
-	[(set (match_operand:V4QI 0 "register_operand" "=r")
-		(plus:V4QI (match_operand:V4QI 1 "register_operand" "r")
-		(vec_duplicate:V4QI (match_operand:QI 2 "register_operand" "r"))))]
-	"TARGET_XCVSIMD && !TARGET_64BIT"
-	"cv.add.sc.b\t%0,%1,%2"
-	[(set_attr "type" "arith")
-	(set_attr "mode" "V4QI")])
+  	[(set (match_operand:V4QI 0 "register_operand" "=r")
+        (plus:V4QI (vec_duplicate:V4QI (match_operand:QI 2 "register_operand" "r"))
+            (match_operand:V4QI 1 "register_operand" "r")))]
+  	"TARGET_XCVSIMD && !TARGET_64BIT"
+  	"cv.add.sc.b\t%0,%1,%2"
+  	[(set_attr "type" "arith")
+   	(set_attr "mode" "V4QI")])
+
+(define_insn "riscv_cv_add_scv2hi"
+  	[(set (match_operand:V2HI 0 "register_operand" "=r")
+        (plus:V2HI (vec_duplicate:V2HI (match_operand:HI 2 "register_operand" "r"))
+            (match_operand:V2HI 1 "register_operand" "r")))]
+  	"TARGET_XCVSIMD && !TARGET_64BIT"
+  	"cv.add.sc.h\t%0,%1,%2"
+  	[(set_attr "type" "arith")
+   	(set_attr "mode" "V2HI")])
+
 
 
 ;;CORE-V SIMD BIT MANIPULATION
