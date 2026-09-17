@@ -2110,6 +2110,31 @@
   	[(set_attr "type" "arith")
    	(set_attr "mode" "V2HI")])
 
+(define_insn "riscv_cv_add_sciv4qi"
+  	[(set (match_operand:V4QI 0 "register_operand" "=r")
+        (plus:V4QI (match_operand:V4QI 1 "register_operand" "r")
+            (match_operand:V4QI 2 "cv_sci_immediate_operand")))]
+  	"TARGET_XCVSIMD && !TARGET_64BIT" {
+  	HOST_WIDE_INT val = INTVAL (CONST_VECTOR_ELT (operands[2], 0));
+  	static char buf[64];
+  	snprintf (buf, sizeof (buf), "cv.add.sci.b\t%%0,%%1,%d", (int) val);
+  	return buf;
+	}
+  	[(set_attr "type" "arith")
+   	(set_attr "mode" "V4QI")])
+
+(define_insn "riscv_cv_add_sciv2hi"
+  	[(set (match_operand:V2HI 0 "register_operand" "=r")
+        (plus:V2HI (match_operand:V2HI 1 "register_operand" "r")
+            (match_operand:V2HI 2 "cv_sci_immediate_operand")))]
+  	"TARGET_XCVSIMD && !TARGET_64BIT" {
+  	HOST_WIDE_INT val = INTVAL (CONST_VECTOR_ELT (operands[2], 0));
+  	static char buf[64];
+  	snprintf (buf, sizeof (buf), "cv.add.sci.h\t%%0,%%1,%d", (int) val);
+  	return buf;
+	}
+  	[(set_attr "type" "arith")
+   	(set_attr "mode" "V2HI")])
 
 
 ;;CORE-V SIMD BIT MANIPULATION

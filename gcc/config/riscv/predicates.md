@@ -63,6 +63,11 @@
   (ior (match_operand 0 "const_csr_operand")
        (match_operand 0 "register_operand")))
 
+
+(define_predicate "cv_sci_immediate_operand"
+  (match_test "const_vec_duplicate_p (op)
+	       && IN_RANGE (INTVAL (CONST_VECTOR_ELT (op, 0)), -32, 31)"))
+
 ;; V has 32-bit unsigned immediates.  This happens to be the same constraint as
 ;; the csr_operand, but it's not CSR related.
 (define_predicate "vector_scalar_shift_operand"
