@@ -2181,6 +2181,139 @@
    	(set_attr "mode" "V2HI")])
 
 
+(define_insn "riscv_cv_and_scv4qi"
+  	[(set (match_operand:V4QI 0 "register_operand" "=r")
+        (and:V4QI (vec_duplicate:V4QI (match_operand:QI 2 "register_operand" "r"))
+            (match_operand:V4QI 1 "register_operand" "r")))]
+ 	"TARGET_XCVSIMD && !TARGET_64BIT"
+  	"cv.and.sc.b\t%0,%1,%2"
+  	[(set_attr "type" "arith")
+   	(set_attr "mode" "V4QI")])
+
+(define_insn "riscv_cv_and_scv2hi"
+  	[(set (match_operand:V2HI 0 "register_operand" "=r")
+        (and:V2HI (vec_duplicate:V2HI (match_operand:HI 2 "register_operand" "r"))
+            (match_operand:V2HI 1 "register_operand" "r")))]
+  	"TARGET_XCVSIMD && !TARGET_64BIT"
+  	"cv.and.sc.h\t%0,%1,%2"
+  	[(set_attr "type" "arith")
+   	(set_attr "mode" "V2HI")])
+
+(define_insn "riscv_cv_and_sciv4qi"
+  	[(set (match_operand:V4QI 0 "register_operand" "=r")
+        (and:V4QI (match_operand:V4QI 1 "register_operand" "r")
+            (match_operand:V4QI 2 "cv_sci_immediate_operand")))]
+  	"TARGET_XCVSIMD && !TARGET_64BIT" {
+  	HOST_WIDE_INT val = INTVAL (CONST_VECTOR_ELT (operands[2], 0));
+  	static char buf[64];
+  	snprintf (buf, sizeof (buf), "cv.and.sci.b\t%%0,%%1,%d", (int) val);
+  	return buf;
+	}
+  	[(set_attr "type" "arith")
+   	(set_attr "mode" "V4QI")])
+
+(define_insn "riscv_cv_and_sciv2hi"
+  	[(set (match_operand:V2HI 0 "register_operand" "=r")
+        (and:V2HI (match_operand:V2HI 1 "register_operand" "r")
+            (match_operand:V2HI 2 "cv_sci_immediate_operand")))]
+  	"TARGET_XCVSIMD && !TARGET_64BIT" {
+  	HOST_WIDE_INT val = INTVAL (CONST_VECTOR_ELT (operands[2], 0));
+  	static char buf[64];
+  	snprintf (buf, sizeof (buf), "cv.and.sci.h\t%%0,%%1,%d", (int) val);
+  	return buf;
+	}
+  	[(set_attr "type" "arith")
+   	(set_attr "mode" "V2HI")])
+
+(define_insn "riscv_cv_or_scv4qi"
+  	[(set (match_operand:V4QI 0 "register_operand" "=r")
+        (ior:V4QI (vec_duplicate:V4QI (match_operand:QI 2 "register_operand" "r"))
+            (match_operand:V4QI 1 "register_operand" "r")))]
+  	"TARGET_XCVSIMD && !TARGET_64BIT"
+  	"cv.or.sc.b\t%0,%1,%2"
+  	[(set_attr "type" "arith")
+   	(set_attr "mode" "V4QI")])
+
+(define_insn "riscv_cv_or_scv2hi"
+  	[(set (match_operand:V2HI 0 "register_operand" "=r")
+        (ior:V2HI (vec_duplicate:V2HI (match_operand:HI 2 "register_operand" "r"))
+            (match_operand:V2HI 1 "register_operand" "r")))]
+  	"TARGET_XCVSIMD && !TARGET_64BIT"
+  	"cv.or.sc.h\t%0,%1,%2"
+  	[(set_attr "type" "arith")
+   	(set_attr "mode" "V2HI")])
+
+(define_insn "riscv_cv_or_sciv4qi"
+  	[(set (match_operand:V4QI 0 "register_operand" "=r")
+        (ior:V4QI (match_operand:V4QI 1 "register_operand" "r")
+            (match_operand:V4QI 2 "cv_sci_immediate_operand")))]
+  	"TARGET_XCVSIMD && !TARGET_64BIT" {
+  	HOST_WIDE_INT val = INTVAL (CONST_VECTOR_ELT (operands[2], 0));
+  	static char buf[64];
+  	snprintf (buf, sizeof (buf), "cv.or.sci.b\t%%0,%%1,%d", (int) val);
+  	return buf;
+	}
+  	[(set_attr "type" "arith")
+   	(set_attr "mode" "V4QI")])
+
+(define_insn "riscv_cv_or_sciv2hi"
+  	[(set (match_operand:V2HI 0 "register_operand" "=r")
+        (ior:V2HI (match_operand:V2HI 1 "register_operand" "r")
+            (match_operand:V2HI 2 "cv_sci_immediate_operand")))]
+  	"TARGET_XCVSIMD && !TARGET_64BIT" {
+  	HOST_WIDE_INT val = INTVAL (CONST_VECTOR_ELT (operands[2], 0));
+  	static char buf[64];
+  	snprintf (buf, sizeof (buf), "cv.or.sci.h\t%%0,%%1,%d", (int) val);
+  	return buf;
+	}
+  	[(set_attr "type" "arith")
+   	(set_attr "mode" "V2HI")])
+
+(define_insn "riscv_cv_xor_scv4qi"
+  	[(set (match_operand:V4QI 0 "register_operand" "=r")
+        (xor:V4QI (vec_duplicate:V4QI (match_operand:QI 2 "register_operand" "r"))
+            (match_operand:V4QI 1 "register_operand" "r")))]
+  	"TARGET_XCVSIMD && !TARGET_64BIT"
+  	"cv.xor.sc.b\t%0,%1,%2"
+  	[(set_attr "type" "arith")
+   	(set_attr "mode" "V4QI")])
+
+(define_insn "riscv_cv_xor_scv2hi"
+  	[(set (match_operand:V2HI 0 "register_operand" "=r")
+        (xor:V2HI (vec_duplicate:V2HI (match_operand:HI 2 "register_operand" "r"))
+            (match_operand:V2HI 1 "register_operand" "r")))]
+  	"TARGET_XCVSIMD && !TARGET_64BIT"
+  	"cv.xor.sc.h\t%0,%1,%2"
+  	[(set_attr "type" "arith")
+   	(set_attr "mode" "V2HI")])
+
+(define_insn "riscv_cv_xor_sciv4qi"
+  	[(set (match_operand:V4QI 0 "register_operand" "=r")
+        (xor:V4QI (match_operand:V4QI 1 "register_operand" "r")
+  	        (match_operand:V4QI 2 "cv_sci_immediate_operand")))]
+  	"TARGET_XCVSIMD && !TARGET_64BIT" {
+  	HOST_WIDE_INT val = INTVAL (CONST_VECTOR_ELT (operands[2], 0));
+  	static char buf[64];
+  	snprintf (buf, sizeof (buf), "cv.xor.sci.b\t%%0,%%1,%d", (int) val);
+  	return buf;
+	}
+  	[(set_attr "type" "arith")
+   	(set_attr "mode" "V4QI")])
+
+(define_insn "riscv_cv_xor_sciv2hi"
+  	[(set (match_operand:V2HI 0 "register_operand" "=r")
+        (xor:V2HI (match_operand:V2HI 1 "register_operand" "r")
+            (match_operand:V2HI 2 "cv_sci_immediate_operand")))]
+  	"TARGET_XCVSIMD && !TARGET_64BIT" {
+  	HOST_WIDE_INT val = INTVAL (CONST_VECTOR_ELT (operands[2], 0));
+  	static char buf[64];
+  	snprintf (buf, sizeof (buf), "cv.xor.sci.h\t%%0,%%1,%d", (int) val);
+  	return buf;
+	}
+  	[(set_attr "type" "arith")
+   	(set_attr "mode" "V2HI")])
+
+
 ;;CORE-V SIMD BIT MANIPULATION
 (define_insn "riscv_cv_simd_extract_h_si"
 	[(set (match_operand:SI 0 "register_operand" "=r")
