@@ -29,7 +29,23 @@ unsigned int udot_h(unsigned short *a, unsigned short *b, int n) {
     return sum;
 }
 
+int dotusp_b(unsigned char *a, signed char *b, int n) {
+    int sum = 0;
+    for (int i = 0; i < n; i++)
+        sum += a[i] * b[i];
+    return sum;
+}
+
+int dotusp_b(unsigned short *a, signed short *b, int n) {
+    int sum = 0;
+    for (int i = 0; i < n; i++)
+        sum += a[i] * b[i];
+    return sum;
+}
+
 /* { dg-final { scan-assembler "cv\\.dotsp\\.b" } } */
 /* { dg-final { scan-assembler "cv\\.dotup\\.b" } } */
 /* { dg-final { scan-assembler "cv\\.dotsp\\.h" } } */
 /* { dg-final { scan-assembler "cv\\.dotup\\.h" } } */
+/* { dg-final { scan-assembler "cv\\.dotusp\\.b" } } */
+/* { dg-final { scan-assembler "cv\\.dotusp\\.h" } } */
