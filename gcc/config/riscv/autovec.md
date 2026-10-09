@@ -2828,99 +2828,41 @@
 ;;operand layout:
 ;;	0 = SI result, 1,2 = vector input, 3 = SI accumultor
 
-;;cv.dotsp.b
-(define_expand "sdot_prodv4qi"
+(define_mode_iterator CVDOT [V4QI V2HI])
+
+;;cv.dotsp
+(define_expand "sdot_prod<mode>"
 	[(match_operand:SI 0 "register_operand")
-	(match_operand:V4QI 1 "register_operand")
-	(match_operand:V4QI 2 "register_operand")
+	(match_operand:CVDOT 1 "cv_simd_dot_operand")
+	(match_operand:CVDOT 2 "cv_simd_dot_operand")
 	(match_operand:SI 3 "register_operand")]
 	"TARGET_XCVSIMD && !TARGET_VECTOR && !TARGET_64BIT"
 {
-	rtx t = gen_reg_rtx (SImode);
-	rtx op1_si = gen_lowpart (SImode, operands[1]);
-	rtx op2_si = gen_lowpart (SImode, operands[2]);
-	emit_insn (gen_riscv_cv_simd_dotsp_b_si (t, op1_si, op2_si));
-	emit_insn (gen_addsi3 (operands[0], operands[3], t));
+	riscv_expand_cv_simd_dot (operands, <MODE>mode, RISCV_CV_DOT_SS);
 	DONE;
 })
 
-;;cv.dotup.b
-(define_expand "udot_prodv4qi"
+;;cv.dotup
+(define_expand "udot_prod<mode>"
 	[(match_operand:SI 0 "register_operand")
-	(match_operand:V4QI 1 "register_operand")
-	(match_operand:V4QI 2 "register_operand")
+	(match_operand:CVDOT 1 "cv_simd_dot_operand")
+	(match_operand:CVDOT 2 "cv_simd_dot_operand")
 	(match_operand:SI 3 "register_operand")]
 	"TARGET_XCVSIMD && !TARGET_VECTOR && !TARGET_64BIT"
 {
-	rtx t = gen_reg_rtx (SImode);
-	rtx op1_si = gen_lowpart (SImode, operands[1]);
-	rtx op2_si = gen_lowpart (SImode, operands[2]);
-	emit_insn (gen_riscv_cv_simd_dotup_b_si (t, op1_si, op2_si));
-	emit_insn (gen_addsi3 (operands[0], operands[3], t));
+	riscv_expand_cv_simd_dot (operands, <MODE>mode, RISCV_CV_DOT_UU);
 	DONE;
 })
 
-;;cv.dotsp.h
-(define_expand "sdot_prodv2hi"
+;;cv.dotusp
+(define_expand "usdot_prod<mode>"
 	[(match_operand:SI 0 "register_operand")
-	(match_operand:V2HI 1 "register_operand")
-	(match_operand:V2HI 2 "register_operand")
+	(match_operand:CVDOT 1 "cv_simd_dot_operand")
+	(match_operand:CVDOT 2 "cv_simd_dot_operand")
 	(match_operand:SI 3 "register_operand")]
 	"TARGET_XCVSIMD && !TARGET_VECTOR && !TARGET_64BIT"
 {
-	rtx t = gen_reg_rtx (SImode);
-	rtx op1_si = gen_lowpart (SImode, operands[1]);
-	rtx op2_si = gen_lowpart (SImode, operands[2]);
-	emit_insn (gen_riscv_cv_simd_dotsp_h_si (t, op1_si, op2_si));
-	emit_insn (gen_addsi3 (operands[0], operands[3], t));
-	DONE;
-})
-
-;;cv.dotup.h
-(define_expand "udot_prodv2hi"
-	[(match_operand:SI 0 "register_operand")
-	(match_operand:V2HI 1 "register_operand")
-	(match_operand:V2HI 2 "register_operand")
-	(match_operand:SI 3 "register_operand")]
-	"TARGET_XCVSIMD && !TARGET_VECTOR && !TARGET_64BIT"
-{
-	rtx t = gen_reg_rtx (SImode);
-	rtx op1_si = gen_lowpart (SImode, operands[1]);
-	rtx op2_si = gen_lowpart (SImode, operands[2]);
-	emit_insn (gen_riscv_cv_simd_dotup_h_si (t, op1_si, op2_si));
-	emit_insn (gen_addsi3 (operands[0], operands[3], t));
-	DONE;
-})
-
-;;cv.dotusp.b
-(define_expand "usdot_prodv4qi"
-	[(match_operand:SI 0 "register_operand")
-	(match_operand:V4QI 1 "register_operand")
-	(match_operand:V4QI 2 "register_operand")
-	(match_operand:SI 3 "register_operand")]
-	"TARGET_XCVSIMD && !TARGET_VECTOR && !TARGET_64BIT"
-{
-	rtx t = gen_reg_rtx (SImode);
-	rtx op1_si = gen_lowpart (SImode, operands[1]);
-	rtx op2_si = gen_lowpart (SImode, operands[2]);
-	emit_insn (gen_riscv_cv_simd_dotusp_b_si (t, op1_si, op2_si));
-	emit_insn (gen_addsi3 (operands[0], operands[3], t));
-	DONE;
-})
-
-;;cv.dotusp.h
-(define_expand "usdot_prodv2hi"
-	[(match_operand:SI 0 "register_operand")
-	(match_operand:V2HI 1 "register_operand")
-	(match_operand:V2HI 2 "register_operand")
-	(match_operand:SI 3 "register_operand")]
-	"TARGET_XCVSIMD && !TARGET_VECTOR && !TARGET_64BIT"
-{
-	rtx t = gen_reg_rtx (SImode);
-	rtx op1_si = gen_lowpart (SImode, operands[1]);
-	rtx op2_si = gen_lowpart (SImode, operands[2]);
-	emit_insn (gen_riscv_cv_simd_dotusp_h_si (t, op1_si, op2_si));
-	emit_insn (gen_addsi3 (operands[0], operands[3], t));
+	riscv_expand_cv_simd_dot (operands, <MODE>mode, RISCV_CV_DOT_US);
 	DONE;
 })
 
