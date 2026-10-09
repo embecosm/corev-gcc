@@ -1219,13 +1219,16 @@ vect_recog_dot_prod_pattern (vec_info *vinfo,
   /* Starting from LAST_STMT, follow the defs of its uses in search
      of the above pattern.  */
 
-  if (!vect_reassociating_reduction_p (vinfo, stmt_vinfo, PLUS_EXPR,
-				       &oprnd0, &oprnd1))
-    return NULL;
-
+  bool minus_p = false;
+  if (!vect_reassociating_reduction_p (vinfo, stmt_vinfo, PLUS_EXPR, &oprnd0, &oprnd1)) {
+    if (!vect_reassociating_reduction_p (vinfo, stmt_vinfo, MINUS_EXPR, &oprnd1, &oprnd0) || STMT_VINFO_REDUC_IDX (stmt_vinfo) != 0)
+      return NULL;
+    minus_p = true;
+  }
   type = TREE_TYPE (gimple_get_lhs (last_stmt));
 
   vect_unpromoted_value unprom_mult;
+  tree red_op = oprnd0;
   oprnd0 = vect_look_through_possible_promotion (vinfo, oprnd0, &unprom_mult);
 
   /* So far so good.  Since last_stmt was detected as a (summation) reduction,
@@ -1243,9 +1246,17 @@ vect_recog_dot_prod_pattern (vec_info *vinfo,
      inside the loop (in case we are analyzing an outer-loop).  */
   vect_unpromoted_value unprom0[2];
   enum optab_subtype subtype = optab_vector;
-  if (!vect_widened_op_tree (vinfo, mult_vinfo, MULT_EXPR, WIDEN_MULT_EXPR,
-			     false, 2, unprom0, &half_type, &subtype))
-    return NULL;
+  if (!vect_widened_op_tree (vinfo, mult_vinfo, MULT_EXPR, WIDEN_MULT_EXPR, false, 2, unprom0, &half_type, &subtype)) {
+    if (!is_pattern_stmt_p (mult_vinfo))
+      return NULL;
+    stmt_vec_info orig_mult = STMT_VINFO_RELATED_STMT (mult_vinfo);
+    if (!orig_mult || gimple_get_lhs (orig_mult->stmt) != red_op)
+      return NULL;
+    subtype = optab_vector;
+    if (!vect_widened_op_tree (vinfo, orig_mult, MULT_EXPR, WIDEN_MULT_EXPR, false, 2, unprom0, &half_type, &subtype))
+      return NULL;
+    unprom_mult.set_op (red_op, vect_internal_def);
+  }
 
   /* If there are two widening operations, make sure they agree on the sign
      of the extension.  The result of an optab_vector_mixed_sign operation
@@ -1255,6 +1266,16 @@ vect_recog_dot_prod_pattern (vec_info *vinfo,
 	  ? TYPE_UNSIGNED (unprom_mult.type)
 	  : TYPE_SIGN (unprom_mult.type) != TYPE_SIGN (half_type)))
     return NULL;
+  
+  /* sum - x * C == sum + x * -C. */
+  if (minus_p) {
+    if (TREE_CODE (unprom0[1].op) != INTEGER_CST)
+      return NULL;
+    widest_int neg = -wi::to_widest (unprom0[1].op);
+    if (!wi::fits_to_tree_p (neg, half_type))
+      return NULL;
+    unprom0[1].set_op (wide_int_to_tree (TREE_TYPE (unprom0[1].op), neg), vect_constant_def);
+  }
 
   vect_pattern_detected ("vect_recog_dot_prod_pattern", last_stmt);
 
@@ -4419,6 +4440,49 @@ vect_synth_mult_by_constant (vec_info *vinfo, tree op, tree val,
   return stmt;
 }
 
+static stmt_vec_info
+vect_mult_feeds_plus_reduction (vec_info *vinfo, stmt_vec_info stmt_vinfo) {
+  stmt_vec_info orig = stmt_vinfo;
+  if (is_pattern_stmt_p (orig))
+    orig = STMT_VINFO_RELATED_STMT (orig);
+  if (!orig)
+    return NULL;
+
+  tree lhs = gimple_get_lhs (orig->stmt);
+  if (!lhs || TREE_CODE (lhs) != SSA_NAME)
+    return NULL;
+
+  /* Follow single uses through at most 4conversions. */
+  for (int depth = 0; depth < 4; ++depth) {
+    use_operand_p use_p;
+    gimple *use_stmt;
+    if (!single_imm_use (lhs, &use_p, &use_stmt))
+      return NULL;
+
+    stmt_vec_info use_info = vinfo->lookup_stmt (use_stmt);
+    if (!use_info)
+      return NULL;
+
+    if (is_gimple_assign (use_stmt) && CONVERT_EXPR_CODE_P (gimple_assign_rhs_code (use_stmt))) {
+      lhs = gimple_assign_lhs (use_stmt);
+      continue;
+    }
+
+    tree op0, op1;
+    if (vect_reassociating_reduction_p (vinfo, use_info, PLUS_EXPR, &op0, &op1))
+      return use_info;
+    /* sum - prod, see vect_recog_dot_prod_pattern. */
+    if (vect_reassociating_reduction_p (vinfo, use_info, MINUS_EXPR, &op0, &op1) && STMT_VINFO_REDUC_IDX (use_info) == 0 && op1 == lhs)
+      return use_info;
+    return NULL;
+
+                
+  }
+  return NULL;
+}
+
+
+
 /* Detect multiplication by constant and convert it into a sequence of
    shifts and additions, subtractions, negations.  We reuse the
    choose_mult_variant algorithms from expmed.cc
@@ -4478,6 +4542,20 @@ vect_recog_mult_pattern (vec_info *vinfo,
 					      oprnd0, oprnd1, stmt_vinfo);
   if (!pattern_stmt)
     return NULL;
+
+  /* Don't synthesize a multiplication that feeds a dot-product reduction the target supports */
+  if (stmt_vec_info red = vect_mult_feeds_plus_reduction (vinfo, stmt_vinfo)) {
+    vect_unpromoted_value unprom;
+    if (vect_look_through_possible_promotion (vinfo, oprnd0, &unprom) && TYPE_PRECISION (unprom.type) * 2 <= TYPE_PRECISION (itype)) {
+      tree red_type = TREE_TYPE (gimple_get_lhs (red->stmt));
+      tree vecotype, vecitype;
+      if (vect_supportable_direct_optab_p (vinfo, red_type, DOT_PROD_EXPR, unprom.type, &vecotype, &vecitype, optab_vector)) {
+        if (dump_enabled_p ())
+          dump_printf_loc (MSG_NOTE, vect_location, "not synthesizing mult that feeds a " "dot-product reduction: %G", last_stmt);
+        return NULL;
+      }
+    }
+  }
 
   /* Pattern detected.  */
   vect_pattern_detected ("vect_recog_mult_pattern", last_stmt);
