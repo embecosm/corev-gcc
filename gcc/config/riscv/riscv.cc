@@ -10563,6 +10563,10 @@ riscv_get_mask_mode (machine_mode mode)
   if (TARGET_VECTOR && riscv_v_ext_mode_p (mode))
     return riscv_vector::get_mask_mode (mode);
 
+  /* XCVSIMD comparisons set each lane to all ones or all zeros, so mask for V4QI or V2HI comparison is vector of the same mode  */
+  if (TARGET_XCVSIMD && (mode == V4QImode || mode == V2HImode))
+    return mode;
+
   return default_get_mask_mode (mode);
 }
 

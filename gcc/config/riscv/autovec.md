@@ -2866,132 +2866,75 @@
 	DONE;
 })
 
-;;XCVSIMD vector conditional (vcond) patterns
 
-(define_expand "vcondv4qiv4qi"
-  [(set (match_operand:V4QI 0 "register_operand")
-    (if_then_else:V4QI
-      (match_operator 3 "comparison_operator"
-        [(match_operand:V4QI 4 "register_operand")
-        (match_operand:V4QI 5 "register_operand")])
-        (match_operand:V4QI 1 "register_operand")
-        (match_operand:V4QI 2 "register_operand")))]
+;; XCVSIMD vector comparisons and selects
+
+(define_mode_iterator CVVEC [V4QI V2HI])
+(define_mode_attr cv_sz [(V4QI "b") (V2HI "h")])
+
+;;siigned comparisons and equ: lane = all ones if true, else 0
+(define_expand "vec_cmp<mode><mode>"
+  [(set (match_operand:CVVEC 0 "register_operand")
+	(match_operator:CVVEC 1 "comparison_operator"
+	  [(match_operand:CVVEC 2 "register_operand")
+	    (match_operand:CVVEC 3 "register_operand")]))]
   "TARGET_XCVSIMD && !TARGET_VECTOR && !TARGET_64BIT"
 {
-  rtx op4_si = gen_lowpart (SImode, operands[4]);
-  rtx op5_si = gen_lowpart (SImode, operands[5]);
-  rtx mask_si = gen_reg_rtx (SImode);
-  rtx op1_si = gen_lowpart (SImode, operands[1]);
-  rtx op2_si = gen_lowpart (SImode, operands[2]);
-  rtx true_si = gen_reg_rtx (SImode);
-  rtx false_si = gen_reg_rtx (SImode);
-  rtx notmask_si = gen_reg_rtx (SImode);
-  rtx result_si = gen_reg_rtx (SImode);
-
-  switch (GET_CODE (operands[3])) {
-    case EQ:
-      emit_insn (gen_riscv_cv_simd_cmpeq_b_si (mask_si, op4_si, op5_si));
-      break;
-    case NE:
-      emit_insn (gen_riscv_cv_simd_cmpne_b_si (mask_si, op4_si, op5_si));
-      break;
-    case GT:
-      emit_insn (gen_riscv_cv_simd_cmpgt_b_si (mask_si, op4_si, op5_si));
-      break;
-    case GE:
-      emit_insn (gen_riscv_cv_simd_cmpge_b_si (mask_si, op4_si, op5_si));
-      break;
-    case LT:
-      emit_insn (gen_riscv_cv_simd_cmplt_b_si (mask_si, op4_si, op5_si));
-      break;
-    case LE:
-      emit_insn (gen_riscv_cv_simd_cmple_b_si (mask_si, op4_si, op5_si));
-      break;
-    case GTU:
-      emit_insn (gen_riscv_cv_simd_cmpgtu_b_si (mask_si, op4_si, op5_si));
-      break;
-    case GEU:
-      emit_insn (gen_riscv_cv_simd_cmpgeu_b_si (mask_si, op4_si, op5_si));
-      break;
-    case LTU:
-      emit_insn (gen_riscv_cv_simd_cmpltu_b_si (mask_si, op4_si, op5_si));
-      break;
-    case LEU:
-      emit_insn (gen_riscv_cv_simd_cmpleu_b_si (mask_si, op4_si, op5_si));
-      break;
-    default:
-      gcc_unreachable ();
+  rtx d = gen_reg_rtx (SImode);
+  rtx a = gen_lowpart (SImode, operands[2]);
+  rtx b = gen_lowpart (SImode, operands[3]);
+  switch (GET_CODE (operands[1])) {
+    case EQ: emit_insn (gen_riscv_cv_simd_cmpeq_<cv_sz>_si (d, a, b)); break;
+    case NE: emit_insn (gen_riscv_cv_simd_cmpne_<cv_sz>_si (d, a, b)); break;
+    case GT: emit_insn (gen_riscv_cv_simd_cmpgt_<cv_sz>_si (d, a, b)); break;
+    case GE: emit_insn (gen_riscv_cv_simd_cmpge_<cv_sz>_si (d, a, b)); break;
+    case LT: emit_insn (gen_riscv_cv_simd_cmplt_<cv_sz>_si (d, a, b)); break;
+    case LE: emit_insn (gen_riscv_cv_simd_cmple_<cv_sz>_si (d, a, b)); break;
+    default: gcc_unreachable ();
   }
-
-  /* result = (mask AND true) OR (NOT(mask) AND false) */
-  emit_insn (gen_andsi3 (true_si, mask_si, op1_si));
-  emit_insn (gen_one_cmplsi2 (notmask_si, mask_si));
-  emit_insn (gen_andsi3 (false_si, notmask_si, op2_si));
-  emit_insn (gen_iorsi3 (result_si, true_si, false_si));
-  emit_move_insn (operands[0], gen_lowpart (V4QImode, result_si));
+  emit_move_insn (operands[0], gen_lowpart (<MODE>mode, d));
   DONE;
 })
 
-(define_expand "vcondv2hiv2hi"
-  [(set (match_operand:V2HI 0 "register_operand")
-    (if_then_else:V2HI
-      (match_operator 3 "comparison_operator"
-      [(match_operand:V2HI 4 "register_operand")
-      (match_operand:V2HI 5 "register_operand")])
-      (match_operand:V2HI 1 "register_operand")
-      (match_operand:V2HI 2 "register_operand")))]
+;;unsigned
+(define_expand "vec_cmpu<mode><mode>"
+  [(set (match_operand:CVVEC 0 "register_operand")
+	(match_operator:CVVEC 1 "comparison_operator"
+	  [(match_operand:CVVEC 2 "register_operand")
+	    (match_operand:CVVEC 3 "register_operand")]))]
   "TARGET_XCVSIMD && !TARGET_VECTOR && !TARGET_64BIT"
 {
-  rtx op4_si = gen_lowpart (SImode, operands[4]);
-  rtx op5_si = gen_lowpart (SImode, operands[5]);
-  rtx mask_si = gen_reg_rtx (SImode);
-  rtx op1_si = gen_lowpart (SImode, operands[1]);
-  rtx op2_si = gen_lowpart (SImode, operands[2]);
-  rtx true_si = gen_reg_rtx (SImode);
-  rtx false_si = gen_reg_rtx (SImode);
-  rtx notmask_si = gen_reg_rtx (SImode);
-  rtx result_si = gen_reg_rtx (SImode);
-
-  switch (GET_CODE (operands[3])) {
-    case EQ:
-      emit_insn (gen_riscv_cv_simd_cmpeq_h_si (mask_si, op4_si, op5_si));
-      break;
-    case NE:
-      emit_insn (gen_riscv_cv_simd_cmpne_h_si (mask_si, op4_si, op5_si));
-      break;
-    case GT:
-      emit_insn (gen_riscv_cv_simd_cmpgt_h_si (mask_si, op4_si, op5_si));
-      break;
-    case GE:
-      emit_insn (gen_riscv_cv_simd_cmpge_h_si (mask_si, op4_si, op5_si));
-      break;
-    case LT:
-      emit_insn (gen_riscv_cv_simd_cmplt_h_si (mask_si, op4_si, op5_si));
-      break;
-    case LE:
-      emit_insn (gen_riscv_cv_simd_cmple_h_si (mask_si, op4_si, op5_si));
-      break;
-    case GTU:
-      emit_insn (gen_riscv_cv_simd_cmpgtu_h_si (mask_si, op4_si, op5_si));
-      break;
-    case GEU:
-      emit_insn (gen_riscv_cv_simd_cmpgeu_h_si (mask_si, op4_si, op5_si));
-      break;
-    case LTU:
-      emit_insn (gen_riscv_cv_simd_cmpltu_h_si (mask_si, op4_si, op5_si));
-      break;
-    case LEU:
-      emit_insn (gen_riscv_cv_simd_cmpleu_h_si (mask_si, op4_si, op5_si));
-      break;
-    default:
-      gcc_unreachable ();
+  rtx d = gen_reg_rtx (SImode);
+  rtx a = gen_lowpart (SImode, operands[2]);
+  rtx b = gen_lowpart (SImode, operands[3]);
+  switch (GET_CODE (operands[1])) {
+    case EQ: emit_insn (gen_riscv_cv_simd_cmpeq_<cv_sz>_si (d, a, b)); break;
+    case NE: emit_insn (gen_riscv_cv_simd_cmpne_<cv_sz>_si (d, a, b)); break;
+    case GTU: emit_insn (gen_riscv_cv_simd_cmpgtu_<cv_sz>_si (d, a, b)); break;
+    case GEU: emit_insn (gen_riscv_cv_simd_cmpgeu_<cv_sz>_si (d, a, b)); break;
+    case LTU: emit_insn (gen_riscv_cv_simd_cmpltu_<cv_sz>_si (d, a, b)); break;
+    case LEU: emit_insn (gen_riscv_cv_simd_cmpleu_<cv_sz>_si (d, a, b)); break;
+    default: gcc_unreachable ();
   }
-
-  emit_insn (gen_andsi3 (true_si, mask_si, op1_si));
-  emit_insn (gen_one_cmplsi2 (notmask_si, mask_si));
-  emit_insn (gen_andsi3 (false_si, notmask_si, op2_si));
-  emit_insn (gen_iorsi3 (result_si, true_si, false_si));
-  emit_move_insn (operands[0], gen_lowpart (V2HImode, result_si));
+  emit_move_insn (operands[0], gen_lowpart (<MODE>mode, d));
   DONE;
+})
 
+;;op0 = mask ? op1 : op2, lane by lane.
+(define_expand "vcond_mask_<mode><mode>"
+  [(set (match_operand:CVVEC 0 "register_operand")
+	(if_then_else:CVVEC
+	  (match_operand:CVVEC 3 "register_operand")
+	  (match_operand:CVVEC 1 "register_operand")
+	  (match_operand:CVVEC 2 "register_operand")))]
+  "TARGET_XCVSIMD && !TARGET_VECTOR && !TARGET_64BIT"
+{
+  rtx t = gen_lowpart (SImode, operands[1]);
+  rtx f = gen_lowpart (SImode, operands[2]);
+  rtx m = gen_lowpart (SImode, operands[3]);
+  rtx x = expand_binop (SImode, xor_optab, t, f, NULL_RTX, 1, OPTAB_DIRECT);
+  x = expand_binop (SImode, and_optab, x, m, NULL_RTX, 1, OPTAB_DIRECT);
+  x = expand_binop (SImode, xor_optab, x, f, NULL_RTX, 1, OPTAB_DIRECT);
+  emit_move_insn (operands[0], gen_lowpart (<MODE>mode, x));
+  DONE;
 })
