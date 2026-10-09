@@ -174,6 +174,9 @@ extern void riscv_subword_address (rtx, rtx *, rtx *, rtx *, rtx *);
 extern void riscv_lshift_subword (machine_mode, rtx, rtx, rtx *);
 extern enum memmodel riscv_union_memmodels (enum memmodel, enum memmodel);
 
+enum riscv_cv_dot_kind { RISCV_CV_DOT_SS, RISCV_CV_DOT_UU, RISCV_CV_DOT_US };
+extern void riscv_expand_cv_simd_dot (rtx *, machine_mode, enum riscv_cv_dot_kind);
+
 /* Routines implemented in riscv-c.cc.  */
 void riscv_cpu_cpp_builtins (cpp_reader *);
 void riscv_register_pragmas (void);
