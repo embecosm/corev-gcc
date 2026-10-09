@@ -76,6 +76,10 @@ along with GCC; see the file COPYING3.  If not see
 #include "tree-dfa.h"
 #include "target-globals.h"
 
+#include "ssa.h"
+#include "tree-ssa-live.h"
+#include "tree-outof-ssa.h"
+
 /* This file should be included last.  */
 #include "target-def.h"
 #include "riscv-vector-costs.h"
@@ -2565,6 +2569,93 @@ riscv_report_v_required (void)
 			  " attribute or pragma");
   reported_p = true;
 }
+
+
+extern gimple *currently_expanding_gimple_stmt;
+
+/* If OP is a scalar broadcast, return that scalar. else return NULL_RTX. */
+static rtx
+riscv_cv_simd_dot_scalar (rtx op, machine_mode vmode) {
+  rtx elt;
+
+  if (const_vec_duplicate_p (op, &elt))
+    return elt;
+  if (GET_CODE (op) == VEC_DUPLICATE)
+    return XEXP (op, 0);
+  if (!REG_P (op) || !currently_expanding_to_rtl)
+    return NULL_RTX;
+
+  gimple *stmt = currently_expanding_gimple_stmt;
+  if (!stmt || !is_gimple_assign (stmt) || gimple_assign_rhs_code (stmt) != DOT_PROD_EXPR)
+    return NULL_RTX;
+
+  tree ops[2] = { gimple_assign_rhs1 (stmt), gimple_assign_rhs2 (stmt) };
+  for (tree t : ops) {
+    if (TREE_CODE (t) != SSA_NAME || TYPE_MODE (TREE_TYPE (t)) != vmode || get_gimple_for_ssa_name (t) || !rtx_equal_p (get_rtx_for_ssa_name (t), op))
+      continue;
+
+    gimple *def = SSA_NAME_DEF_STMT (t);
+    if (!gimple_assign_single_p (def))
+      return NULL_RTX;
+    tree s = uniform_vector_p (gimple_assign_rhs1 (def));
+    if (!s)
+      return NULL_RTX;
+    if (TREE_CODE (s) == INTEGER_CST)
+      return expand_normal (s);
+    if (TREE_CODE (s) == SSA_NAME && !get_gimple_for_ssa_name (s))
+      return get_rtx_for_ssa_name (s);
+    return NULL_RTX;
+  }
+  return NULL_RTX;
+}
+
+
+void
+riscv_expand_cv_simd_dot (rtx *operands, machine_mode vmode, enum riscv_cv_dot_kind kind) {
+  /* accumulating forms: op0 = op3 + dot (op1, op2) */
+  static const insn_code sc_icode[3][2] = {
+  { CODE_FOR_riscv_cv_simd_sdotsp_sc_b_si, CODE_FOR_riscv_cv_simd_sdotsp_sc_h_si },
+  { CODE_FOR_riscv_cv_simd_sdotup_sc_b_si, CODE_FOR_riscv_cv_simd_sdotup_sc_h_si },
+  { CODE_FOR_riscv_cv_simd_sdotusp_sc_b_si, CODE_FOR_riscv_cv_simd_sdotusp_sc_h_si } };
+  static const insn_code vv_icode[3][2] = {
+  { CODE_FOR_riscv_cv_simd_sdotsp_b_si, CODE_FOR_riscv_cv_simd_sdotsp_h_si },
+  { CODE_FOR_riscv_cv_simd_sdotup_b_si, CODE_FOR_riscv_cv_simd_sdotup_h_si },
+  { CODE_FOR_riscv_cv_simd_sdotusp_b_si, CODE_FOR_riscv_cv_simd_sdotusp_h_si } };
+
+  int m = vmode == V4QImode ? 0 : 1;
+  scalar_int_mode smode = m == 0 ? QImode : HImode;
+  rtx vec = operands[1];
+  rtx scal = riscv_cv_simd_dot_scalar (operands[2], vmode);
+
+  /* sdot,udot commutative, usdot not. the broadcast has to be op2 */
+  if (!scal && kind != RISCV_CV_DOT_US) {
+    scal = riscv_cv_simd_dot_scalar (operands[1], vmode);
+    if (scal)
+      vec = operands[2];
+  }
+
+  rtx vec_si = gen_lowpart (SImode, force_reg (vmode, vec));
+  rtx acc = force_reg (SImode, operands[3]);
+
+  if (scal) {
+    if (CONST_INT_P (scal)) {
+      HOST_WIDE_INT v = INTVAL (scal);
+      /* imm6 is zero extended for dotup, sign else */
+      bool fits = kind == RISCV_CV_DOT_UU ? IN_RANGE (v, 0, 63)
+      : IN_RANGE (v, -32, 31);
+      if (!fits)
+        scal = force_reg (smode, scal); /* .sc instead of .sci */
+    }
+    else
+    scal = gen_lowpart (smode, force_reg (GET_MODE (scal), scal));
+    emit_insn (GEN_FCN (sc_icode[kind][m]) (operands[0], vec_si, scal, acc));
+  }
+  else {
+    rtx op2_si = gen_lowpart (SImode, force_reg (vmode, operands[2]));
+    emit_insn (GEN_FCN (vv_icode[kind][m]) (operands[0], vec_si, op2_si, acc));
+  }
+}
+
 
 /* Helper function to operation for rtx_code CODE.  */
 static void
