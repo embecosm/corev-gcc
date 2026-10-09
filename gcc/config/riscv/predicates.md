@@ -720,3 +720,8 @@
   return (riscv_symbolic_constant_p (op, &type)
          && type == SYMBOL_PCREL);
 })
+
+(define_predicate "cv_simd_dot_operand"
+  (ior (match_operand 0 "register_operand")
+    (and (match_code "const_vector")
+      (match_test "const_vec_duplicate_p (op)"))))
