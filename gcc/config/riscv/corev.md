@@ -1855,9 +1855,9 @@
 		(match_operand:SI 1 "register_operand")
 		(match_operand:SI 2 "register_operand")]
 	"TARGET_XCVSIMD && !TARGET_64BIT" {
-		rtx v0 = gen_lowpart(V4QImode, operands[0]);
-		rtx v1 = gen_lowpart(V4QImode, operands[1]);
-		rtx v2 = gen_lowpart(V4QImode, operands[2]);
+		rtx v0 = gen_lowpart(V2HImode, operands[0]);
+		rtx v1 = gen_lowpart(V2HImode, operands[1]);
+		rtx v2 = gen_lowpart(V2HImode, operands[2]);
 		emit_insn (gen_riscv_cv_orv2hi (v0, v1, v2));
 		DONE;
 	})
@@ -1903,9 +1903,9 @@
 		(match_operand:SI 1 "register_operand")
 		(match_operand:SI 2 "register_operand")]
 	"TARGET_XCVSIMD && !TARGET_64BIT" {
-		rtx v0 = gen_lowpart(V4QImode, operands[0]);
-		rtx v1 = gen_lowpart(V4QImode, operands[1]);
-		rtx v2 = gen_lowpart(V4QImode, operands[2]);
+		rtx v0 = gen_lowpart(V2HImode, operands[0]);
+		rtx v1 = gen_lowpart(V2HImode, operands[1]);
+		rtx v2 = gen_lowpart(V2HImode, operands[2]);
 		emit_insn (gen_riscv_cv_xorv2hi (v0, v1, v2));
 		DONE;
 	})
@@ -1976,9 +1976,9 @@
 		(match_operand:SI 1 "register_operand")
 		(match_operand:SI 2 "register_operand")]
 	"TARGET_XCVSIMD && !TARGET_64BIT" {
-		rtx v0 = gen_lowpart(V4QImode, operands[0]);
-		rtx v1 = gen_lowpart(V4QImode, operands[1]);
-		rtx v2 = gen_lowpart(V4QImode, operands[2]);
+		rtx v0 = gen_lowpart(V2HImode, operands[0]);
+		rtx v1 = gen_lowpart(V2HImode, operands[1]);
+		rtx v2 = gen_lowpart(V2HImode, operands[2]);
 		emit_insn (gen_riscv_cv_andv2hi (v0, v1, v2));
 		DONE;
 	})
