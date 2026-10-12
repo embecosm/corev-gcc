@@ -177,6 +177,8 @@ extern enum memmodel riscv_union_memmodels (enum memmodel, enum memmodel);
 enum riscv_cv_dot_kind { RISCV_CV_DOT_SS, RISCV_CV_DOT_UU, RISCV_CV_DOT_US };
 extern void riscv_expand_cv_simd_dot (rtx *, machine_mode, enum riscv_cv_dot_kind);
 
+extern void riscv_expand_cv_simd_vec_set_var (rtx, rtx, rtx);
+
 /* Routines implemented in riscv-c.cc.  */
 void riscv_cpu_cpp_builtins (cpp_reader *);
 void riscv_register_pragmas (void);

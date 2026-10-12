@@ -2657,6 +2657,27 @@ riscv_expand_cv_simd_dot (rtx *operands, machine_mode vmode, enum riscv_cv_dot_k
 }
 
 
+
+/* vec_set for an XCVSIMD V4QI/V2HI vector with a variable index */
+void
+riscv_expand_cv_simd_vec_set_var (rtx vec, rtx val, rtx idx) {
+  machine_mode vmode = GET_MODE (vec);
+  machine_mode emode = GET_MODE_INNER (vmode);
+  int bits = GET_MODE_UNIT_BITSIZE (vmode);
+  rtx v = gen_lowpart (SImode, vec);
+  rtx s = gen_lowpart (SImode, force_reg (emode, val));
+  rtx emask = GEN_INT ((HOST_WIDE_INT_1 << bits) - 1);
+
+  /* bit offset of the lane: idx * bits */
+  rtx sh = expand_simple_binop (SImode, ASHIFT, convert_to_mode (SImode, idx, 1), GEN_INT (exact_log2 (bits)), NULL_RTX, 1, OPTAB_DIRECT);
+  rtx mask = expand_simple_binop (SImode, ASHIFT, force_reg (SImode, emask), sh, NULL_RTX, 1, OPTAB_DIRECT);
+  rtx keep = expand_simple_binop (SImode, AND, v, expand_simple_unop (SImode, NOT, mask, NULL_RTX, 1), NULL_RTX, 1, OPTAB_DIRECT);
+  rtx ins = expand_simple_binop (SImode, AND, s, emask, NULL_RTX, 1, OPTAB_DIRECT);
+  ins = expand_simple_binop (SImode, ASHIFT, ins, sh, NULL_RTX, 1, OPTAB_DIRECT);
+  emit_move_insn (v, expand_simple_binop (SImode, IOR, keep, ins, NULL_RTX, 1, OPTAB_DIRECT));
+}
+
+
 /* Helper function to operation for rtx_code CODE.  */
 static void
 riscv_expand_op (enum rtx_code code, machine_mode mode, rtx op0, rtx op1,
@@ -3505,6 +3526,12 @@ riscv_rtx_costs (rtx x, machine_mode mode, int outer_code, int opno ATTRIBUTE_UN
       return false;
 
     case ZERO_EXTRACT:
+    /* XCVSIMD: an aligned byte/halfword extract is one cv.extract*/
+    if (TARGET_XCVSIMD && !TARGET_64BIT && outer_code == SET && CONST_INT_P (XEXP (x, 1)) && CONST_INT_P (XEXP (x, 2)) && (INTVAL (XEXP (x, 1)) == 8 || INTVAL (XEXP (x, 1)) == 16) && INTVAL (XEXP (x, 2)) % INTVAL (XEXP (x, 1)) == 0) {
+      *total = COSTS_N_INSNS (1);
+      return true;
+    }
+    
       /* This is an SImode shift.  */
       if (outer_code == SET
 	  && CONST_INT_P (XEXP (x, 1))
@@ -10735,6 +10762,13 @@ riscv_use_divmod_expander (void)
 static machine_mode
 riscv_preferred_simd_mode (scalar_mode mode)
 {
+   /* prefer the native 32-bit vectors */
+if (TARGET_XCVSIMD && !TARGET_VECTOR && !TARGET_64BIT) {
+  if (mode == QImode)
+    return V4QImode;
+  if (mode == HImode)
+    return V2HImode;
+}
   if (TARGET_VECTOR && !TARGET_XTHEADVECTOR)
     return riscv_vector::preferred_simd_mode (mode);
 

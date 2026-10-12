@@ -2626,6 +2626,51 @@
 	(set_attr "mode" "SI")])
 
 
+;;aligned byte/halfword extract & insert described as plain RTL so the optimisers can select them
+
+(define_code_iterator cv_any_extract [sign_extract zero_extract])
+(define_code_attr cv_ext_u [(sign_extract "") (zero_extract "u")])
+
+(define_insn "*cv_simd_extract<cv_ext_u>_b"
+	[(set (match_operand:SI 0 "register_operand" "=r")
+		(cv_any_extract:SI (match_operand:SI 1 "register_operand" "r")
+		(const_int 8)
+		(match_operand 2 "const_int_operand" "n")))]
+	"TARGET_XCVSIMD && !TARGET_64BIT && (INTVAL (operands[2]) & 7) == 0 && IN_RANGE (INTVAL (operands[2]), 0, 24)"
+	{
+		operands[2] = GEN_INT (INTVAL (operands[2]) / 8);
+		return "cv.extract<cv_ext_u>.b\t%0,%1,%2";
+	}
+	[(set_attr "type" "arith")
+	(set_attr "mode" "SI")])
+
+(define_insn "*cv_simd_extract<cv_ext_u>_h"
+	[(set (match_operand:SI 0 "register_operand" "=r")
+		(cv_any_extract:SI (match_operand:SI 1 "register_operand" "r")
+		(const_int 16)
+		(match_operand 2 "const_int_operand" "n")))]
+	"TARGET_XCVSIMD && !TARGET_64BIT && (INTVAL (operands[2]) == 0 || INTVAL (operands[2]) == 16)"
+	{
+		operands[2] = GEN_INT (INTVAL (operands[2]) / 16);
+		return "cv.extract<cv_ext_u>.h\t%0,%1,%2";
+	}
+	[(set_attr "type" "arith")
+	(set_attr "mode" "SI")])
+
+(define_insn "*cv_simd_extractu_b_shift"
+	[(set (match_operand:SI 0 "register_operand" "=r")
+		(and:SI (lshiftrt:SI (match_operand:SI 1 "register_operand" "r")
+		(match_operand 2 "const_int_operand" "n"))
+		(const_int 255)))]
+	"TARGET_XCVSIMD && !TARGET_64BIT && (INTVAL (operands[2]) == 8 || INTVAL (operands[2]) == 16)"
+	{
+		operands[2] = GEN_INT (INTVAL (operands[2]) / 8);
+		return "cv.extractu.b\t%0,%1,%2";
+	}
+	[(set_attr "type" "arith")
+	(set_attr "mode" "SI")])
+
+
 ;;CORE-V SIMD DOT PRODUCT
 (define_insn "riscv_cv_simd_dotup_h_si"
 	[(set (match_operand:SI 0 "register_operand" "=r")

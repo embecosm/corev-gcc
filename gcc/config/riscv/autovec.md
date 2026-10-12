@@ -1545,8 +1545,25 @@
   [(match_operand:V_VLS 0 "register_operand")
    (match_operand:<VEL> 1 "register_operand")
    (match_operand       2 "nonmemory_operand")]
-  "TARGET_VECTOR"
+  "TARGET_VECTOR || (TARGET_XCVSIMD &&  !TARGET_VECTOR && (<MODE>mode == V4QImode || <MODE>mode == V2HImode))"
 {
+  if (!TARGET_VECTOR) {
+    rtx v = gen_lowpart (SImode, operands[0]);
+    rtx s = gen_lowpart (SImode, force_reg (<VEL>mode, operands[1]));
+    if (CONST_INT_P (operands[2])) {
+      rtx t = gen_reg_rtx (SImode);
+      if (<MODE>mode == V4QImode)
+        emit_insn (gen_riscv_cv_simd_insert_b_si (t, s, v, operands[2]));
+      else
+        emit_insn (gen_riscv_cv_simd_insert_h_si (t, s, v, operands[2]));
+      emit_move_insn (v, t);
+    }
+    else
+      riscv_expand_cv_simd_vec_set_var (operands[0], operands[1], operands[2]);
+    DONE;
+  } 
+
+
   /* If we set the first element, emit an v(f)mv.s.[xf].  */
   if (operands[2] == const0_rtx)
     {
