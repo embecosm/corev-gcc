@@ -2671,6 +2671,31 @@
 	(set_attr "mode" "SI")])
 
 
+;;sign/zero extension using cv.extract with index 0, mem sources still use lb/lh/lhu
+
+(define_insn "*cv_simd_extend<SHORT:mode>si2"
+	[(set (match_operand:SI 0 "register_operand" "=r,r")
+		(sign_extend:SI 
+		(match_operand:SHORT 1 "nonimmediate_operand" " r,m")))]
+	"TARGET_XCVSIMD && !TARGET_64BIT && !TARGET_ZBB && !TARGET_XTHEADBB"
+	"@
+	cv.extract.<SHORT:size>\t%0,%1,0
+	l<SHORT:size>\t%0,%1"
+	[(set_attr "type" "arith,load")
+	(set_attr "mode" "SI")])
+
+(define_insn "*cv_simd_zero_extendhisi2"
+	[(set (match_operand:SI 0 "register_operand" "=r,r")
+		(zero_extend:SI
+		(match_operand:HI 1 "nonimmediate_operand" " r,m")))]
+	"TARGET_XCVSIMD && !TARGET_64BIT && !TARGET_ZBB && !TARGET_XTHEADBB"
+	"@
+	cv.extractu.h\t%0,%1,0
+	lhu\t%0,%1"
+	[(set_attr "type" "arith,load")
+	(set_attr "mode" "SI")])
+
+
 ;;CORE-V SIMD DOT PRODUCT
 (define_insn "riscv_cv_simd_dotup_h_si"
 	[(set (match_operand:SI 0 "register_operand" "=r")

@@ -1764,7 +1764,7 @@
   [(set (match_operand:GPR    0 "register_operand"     "=r,r")
 	(zero_extend:GPR
 	    (match_operand:HI 1 "nonimmediate_operand" " r,m")))]
-  "!TARGET_ZBB && !TARGET_XTHEADBB && !TARGET_XTHEADMEMIDX && !TARGET_XCVMEM"
+  "!TARGET_ZBB && !TARGET_XTHEADBB && !TARGET_XTHEADMEMIDX && !TARGET_XCVMEM && !(TARGET_XCVSIMD && !TARGET_64BIT)"
   "@
    #
    lhu\t%0,%1"
@@ -1835,7 +1835,7 @@
   [(set (match_operand:SUPERQI   0 "register_operand"     "=r,r")
 	(sign_extend:SUPERQI
 	    (match_operand:SHORT 1 "nonimmediate_operand" " r,m")))]
-  "!TARGET_ZBB && !TARGET_XTHEADBB && !TARGET_XTHEADMEMIDX && !TARGET_XCVMEM"
+  "!TARGET_ZBB && !TARGET_XTHEADBB && !TARGET_XTHEADMEMIDX && !TARGET_XCVMEM && !(TARGET_XCVSIMD && !TARGET_64BIT && <SUPERQI:MODE>mode == SImode)"
   "@
    #
    l<SHORT:size>\t%0,%1"

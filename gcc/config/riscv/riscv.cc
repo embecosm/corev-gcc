@@ -3328,6 +3328,10 @@ riscv_extend_cost (rtx op, bool unsigned_p)
     /* We can use SEXT.W.  */
     return COSTS_N_INSNS (1);
 
+  /* cv.extract with index 0 is one instruction. */
+  if (TARGET_XCVSIMD && !TARGET_64BIT && (GET_MODE (op) == QImode || GET_MODE (op) == HImode))
+    return COSTS_N_INSNS (1);
+
   /* We need to use a shift left and a shift right.  */
   return COSTS_N_INSNS (2);
 }
@@ -3531,7 +3535,7 @@ riscv_rtx_costs (rtx x, machine_mode mode, int outer_code, int opno ATTRIBUTE_UN
       *total = COSTS_N_INSNS (1);
       return true;
     }
-    
+
       /* This is an SImode shift.  */
       if (outer_code == SET
 	  && CONST_INT_P (XEXP (x, 1))
@@ -3552,13 +3556,12 @@ riscv_rtx_costs (rtx x, machine_mode mode, int outer_code, int opno ATTRIBUTE_UN
 	}
       gcc_fallthrough ();
     case SIGN_EXTRACT:
-      if (TARGET_XTHEADBB && outer_code == SET
-	  && CONST_INT_P (XEXP (x, 1))
-	  && CONST_INT_P (XEXP (x, 2)))
-	{
-	  *total = COSTS_N_INSNS (SINGLE_SHIFT_COST);
-	  return true;
-	}
+  /* an aligned byte/halfword extract is one cv.extract */
+  if (TARGET_XCVSIMD && !TARGET_64BIT && outer_code == SET && CONST_INT_P (XEXP (x, 1)) && CONST_INT_P (XEXP (x, 2)) && (INTVAL (XEXP (x, 1)) == 8 || INTVAL (XEXP (x, 1)) == 16) && INTVAL (XEXP (x, 2)) % INTVAL (XEXP (x, 1)) == 0)
+  {
+  *total = COSTS_N_INSNS (1);
+  return true;
+  }
       return false;
 
     case ASHIFT:
