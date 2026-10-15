@@ -2056,20 +2056,18 @@
 })
 
 (define_insn "riscv_cv_broadcastv4qi"
-  	[(set (match_operand:V4QI 0 "register_operand" "=r")
-        (vec_duplicate:V4QI (match_operand:QI 1 "register_operand" "r")))
-   	(clobber (match_scratch:SI 2 "=&r"))]
+	[(set (match_operand:V4QI 0 "register_operand" "=r")
+		(vec_duplicate:V4QI (match_operand:QI 1 "register_operand" "r")))]
   	"TARGET_XCVSIMD && !TARGET_64BIT"
-  	"andi\t%0,%1,0xff\;slli\t%2,%0,8\;or\t%0,%0,%2\;slli\t%2,%0,16\;or\t%0,%0,%2"
+  	"cv.shufflei0.sci.b\t%0,%1,0"
   	[(set_attr "type" "arith")
    	(set_attr "mode" "V4QI")])
 
 (define_insn "riscv_cv_broadcastv2hi"
   	[(set (match_operand:V2HI 0 "register_operand" "=r")
-        (vec_duplicate:V2HI (match_operand:HI 1 "register_operand" "r")))
-   	(clobber (match_scratch:SI 2 "=&r"))]
+		(vec_duplicate:V2HI (match_operand:HI 1 "register_operand" "r")))]
   	"TARGET_XCVSIMD && !TARGET_64BIT"
-  	"slli\t%0,%1,16\;srli\t%0,%0,16\;slli\t%2,%0,16\;or\t%0,%0,%2"
+  	"cv.shuffle.sci.h\t%0,%1,0"
   	[(set_attr "type" "arith")
    	(set_attr "mode" "V2HI")])
 
@@ -3112,6 +3110,77 @@
 	UNSPEC_CV_PACKLO_B))]
 	"TARGET_XCVSIMD && !TARGET_64BIT"
 	"cv.packlo.b\t%0,%1,%2"
+	[(set_attr "type" "arith")
+	(set_attr "mode" "SI")])
+
+
+;; shuffle & pack described as vec_select/vec_concat
+
+;;cv.shuffle.sci.h - any single input for V2HI
+(define_insn "*cv_simd_shuffle_sci_h"
+	[(set (match_operand:V2HI 0 "register_operand" "=r")
+		(vec_select:V2HI
+		(match_operand:V2HI 1 "register_operand" "r")
+		(parallel [(match_operand 2 "const_int_operand" "n")
+		(match_operand 3 "const_int_operand" "n")])))]
+	"TARGET_XCVSIMD && !TARGET_64BIT
+		&& IN_RANGE (INTVAL (operands[2]), 0, 1)
+		&& IN_RANGE (INTVAL (operands[3]), 0, 1)"
+	{
+		operands[2] = GEN_INT (INTVAL (operands[2]) | (INTVAL (operands[3]) << 1));
+		return "cv.shuffle.sci.h\t%0,%1,%2";
+	}
+	[(set_attr "type" "arith")
+	(set_attr "mode" "SI")])
+
+;; cv.shuffleI<k>.sci.b - any single input for V4QI 
+(define_insn "*cv_simd_shuffle_sci_b"
+	[(set (match_operand:V4QI 0 "register_operand" "=r")
+		(vec_select:V4QI
+		(match_operand:V4QI 1 "register_operand" "r")
+		(parallel [(match_operand 2 "const_int_operand" "n")
+		(match_operand 3 "const_int_operand" "n")
+		(match_operand 4 "const_int_operand" "n")
+		(match_operand 5 "const_int_operand" "n")])))]
+	"TARGET_XCVSIMD && !TARGET_64BIT
+		&& IN_RANGE (INTVAL (operands[2]), 0, 3)
+		&& IN_RANGE (INTVAL (operands[3]), 0, 3)
+		&& IN_RANGE (INTVAL (operands[4]), 0, 3)
+		&& IN_RANGE (INTVAL (operands[5]), 0, 3)"
+	{
+		static const char *const insn[4] = {
+			"cv.shufflei0.sci.b\t%0,%1,%2", "cv.shufflei1.sci.b\t%0,%1,%2",
+			"cv.shufflei2.sci.b\t%0,%1,%2", "cv.shufflei3.sci.b\t%0,%1,%2" };
+		int k = INTVAL (operands[5]);
+		operands[2] = GEN_INT (INTVAL (operands[2]) | (INTVAL (operands[3]) << 2) | (INTVAL (operands[4]) << 4));
+		return insn[k];
+	}
+	[(set_attr "type" "arith")
+	(set_attr "mode" "SI")])
+
+;; cv.pack & cv.pack.h - lane 0 from operand 2, lane 1 from operand 1
+;; both the same half (0 = cv.pack, 1 = cv.pack.h)
+(define_insn "*cv_simd_pack_select"
+	[(set (match_operand:V2HI 0 "register_operand" "=r")
+		(vec_concat:V2HI
+		(vec_select:HI (match_operand:V2HI 2 "register_operand" "r")
+		(parallel [(match_operand 3 "const_int_operand" "n")]))
+		(vec_select:HI (match_operand:V2HI 1 "register_operand" "r")
+		(parallel [(match_dup 3)]))))]
+	"TARGET_XCVSIMD && !TARGET_64BIT && IN_RANGE (INTVAL (operands[3]), 0, 1)"
+	{
+		return INTVAL (operands[3]) ? "cv.pack.h\t%0,%1,%2" : "cv.pack\t%0,%1,%2";
+	}
+	[(set_attr "type" "arith")
+	(set_attr "mode" "SI")])
+
+;; cv.pack from two scalars
+(define_insn "*cv_simd_pack_scalar"
+	[(set (match_operand:V2HI 0 "register_operand" "=r")
+		(vec_concat:V2HI (match_operand:HI 2 "register_operand" "r")
+		(match_operand:HI 1 "register_operand" "r")))]
+	"TARGET_XCVSIMD && !TARGET_64BIT"
+	"cv.pack\t%0,%1,%2"
 	[(set_attr "type" "arith")
 	(set_attr "mode" "SI")])
 

@@ -358,10 +358,12 @@
    (match_operand:V_VLS 1 "register_operand")
    (match_operand:V_VLS 2 "register_operand")
    (match_operand:<VINDEX> 3 "vector_perm_operand")]
-  "TARGET_VECTOR && GET_MODE_NUNITS (<MODE>mode).is_constant ()"
-  {
-    riscv_vector::expand_vec_perm (operands[0], operands[1],
-				   operands[2], operands[3]);
+    "(TARGET_VECTOR && GET_MODE_NUNITS (<MODE>mode).is_constant ()) || (TARGET_XCVSIMD && !TARGET_VECTOR && !TARGET_64BIT && (<MODE>mode == V4QImode || <MODE>mode == V2HImode))" {
+    if (!TARGET_VECTOR) {
+      riscv_expand_cv_simd_vec_perm (operands[0], operands[1], operands[2], operands[3]);
+      DONE;
+    }
+    riscv_vector::expand_vec_perm (operands[0], operands[1], operands[2], operands[3]);
     DONE;
   }
 )
@@ -375,9 +377,12 @@
 (define_expand "vec_init<mode><vel>"
   [(match_operand:V_VLSI 0 "register_operand")
    (match_operand 1 "")]
-  "TARGET_VECTOR"
+    "TARGET_VECTOR || (TARGET_XCVSIMD && !TARGET_VECTOR && (<MODE>mode == V4QImode || <MODE>mode == V2HImode))"
   {
-    riscv_vector::expand_vec_init (operands[0], operands[1]);
+    if (!TARGET_VECTOR)
+      riscv_expand_cv_simd_vec_init (operands[0], operands[1]);
+    else
+      riscv_vector::expand_vec_init (operands[0], operands[1]);
     DONE;
   }
 )

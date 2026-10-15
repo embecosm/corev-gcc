@@ -10479,7 +10479,6 @@ riscv_vector_mode_supported_p (machine_mode mode)
 
   return false;
 }
-
 /* Implement TARGET_VERIFY_TYPE_CONTEXT.  */
 
 static bool
@@ -11154,6 +11153,100 @@ riscv_vectorize_related_mode (machine_mode vector_mode, scalar_mode element_mode
   return default_vectorize_related_mode (vector_mode, element_mode, nunits);
 }
 
+/* vec_perm with the selector in a register */
+void
+riscv_expand_cv_simd_vec_perm (rtx target, rtx op0, rtx op1, rtx sel) {
+  machine_mode vmode = GET_MODE (target);
+  bool b = vmode == V4QImode;
+  rtx s = force_reg (SImode, simplify_gen_subreg (SImode, sel, vmode, 0));
+  rtx acc = gen_lowpart (SImode, force_reg (vmode, op0));
+  rtx res = gen_reg_rtx (SImode);
+
+  if (rtx_equal_p (op0, op1))
+    emit_insn (b ? gen_riscv_cv_simd_shuffle_b_si (res, acc, s) : gen_riscv_cv_simd_shuffle_h_si (res, acc, s));
+  else {
+    rtx a = gen_lowpart (SImode, force_reg (vmode, op1));
+    emit_insn (b ? gen_riscv_cv_simd_shuffle2_b_si (res, a, s, acc) : gen_riscv_cv_simd_shuffle2_h_si (res, a, s, acc));
+  }
+  emit_move_insn (target, gen_lowpart (vmode, res));
+}
+
+
+/* cosnt permutation of simd V4QI/V2HI vectors. One input becomes a single vec_select
+two inputs use cv.shuffle2 with a constant selector, where lane i holds its index */
+
+static bool
+riscv_cv_simd_vec_perm_const (machine_mode vmode, rtx target, rtx op0, rtx op1, const vec_perm_indices &sel) {
+  unsigned n = GET_MODE_NUNITS (vmode).to_constant (), idx[4], from1 = 0;
+  for (unsigned i = 0; i < n; i++) {
+    idx[i] = sel[i].to_constant () & (2 * n - 1);
+    from1 += idx[i] >= n;
+  }
+  if (!target)
+    return true;
+
+  if (from1 == 0 || from1 == n || rtx_equal_p (op0, op1)) {
+    rtvec v = rtvec_alloc (n);
+    for (unsigned i = 0; i < n; i++)
+      RTVEC_ELT (v, i) = GEN_INT (idx[i] % n);
+      rtx src = force_reg (vmode, from1 == n ? op1 : op0);
+      emit_insn (gen_rtx_SET (target, gen_rtx_VEC_SELECT (vmode, src, gen_rtx_PARALLEL (VOIDmode, v))));
+    return true;
+  }
+
+  /* V2HI takes  same half from each input: cv.pack(.h) */
+  if (vmode == V2HImode && (idx[0] & 1) == (idx[1] & 1)) {
+    rtx h = gen_rtx_PARALLEL (VOIDmode, gen_rtvec (1, GEN_INT (idx[0] & 1)));
+    rtx lo = force_reg (vmode, idx[0] < 2 ? op0 : op1);
+    rtx hi = force_reg (vmode, idx[1] < 2 ? op0 : op1);
+    emit_insn (gen_rtx_SET (target, gen_rtx_VEC_CONCAT (vmode, gen_rtx_VEC_SELECT (HImode, lo, h), gen_rtx_VEC_SELECT (HImode, hi, h))));
+    return true;
+  }
+
+  HOST_WIDE_INT s = 0;
+  for (unsigned i = 0; i < n; i++)
+    s |= (HOST_WIDE_INT) idx[i] << (i * 32 / n);
+  rtx res = gen_reg_rtx (SImode);
+  rtx a = gen_lowpart (SImode, force_reg (vmode, op1));
+  rtx acc = gen_lowpart (SImode, force_reg (vmode, op0));
+  rtx selr = force_reg (SImode, gen_int_mode (s, SImode));
+  emit_insn (vmode == V4QImode ? gen_riscv_cv_simd_shuffle2_b_si (res, a, selr, acc) : gen_riscv_cv_simd_shuffle2_h_si (res, a, selr, acc));
+  emit_move_insn (target, gen_lowpart (vmode, res));
+  return true;
+}
+
+
+/* vec_init for XCVSIMD V4QI/V2HI */
+
+void
+riscv_expand_cv_simd_vec_init (rtx target, rtx vals) {
+  machine_mode vmode = GET_MODE (target);
+  machine_mode emode = GET_MODE_INNER (vmode);
+  int n = GET_MODE_NUNITS (vmode).to_constant ();
+  rtx e[4], s[4];
+  bool uniform = true;
+
+  for (int i = 0; i < n; i++) {
+    uniform &= rtx_equal_p (XVECEXP (vals, 0, i), XVECEXP (vals, 0, 0));
+    e[i] = force_reg (emode, XVECEXP (vals, 0, i));
+    s[i] = gen_lowpart (SImode, e[i]);
+  }
+
+  if (uniform)
+    emit_insn (gen_rtx_SET (target, gen_rtx_VEC_DUPLICATE (vmode, e[0])));
+  else if (vmode == V2HImode)
+    emit_insn (gen_rtx_SET (target, gen_rtx_VEC_CONCAT (vmode, e[0], e[1])));
+  else
+  {
+    rtx r = gen_reg_rtx (SImode);
+    emit_clobber (r);
+    emit_insn (gen_riscv_cv_simd_packlo_b_si (r, s[1], s[0], r));
+    emit_insn (gen_riscv_cv_simd_packhi_b_si (r, s[3], s[2], r));
+    emit_move_insn (target, gen_lowpart (vmode, r));
+  }
+}
+
+
 /* Implement TARGET_VECTORIZE_VEC_PERM_CONST.  */
 
 static bool
@@ -11164,6 +11257,9 @@ riscv_vectorize_vec_perm_const (machine_mode vmode, machine_mode op_mode,
   if (TARGET_VECTOR && riscv_v_ext_mode_p (vmode))
     return riscv_vector::expand_vec_perm_const (vmode, op_mode, target, op0,
 						op1, sel);
+
+  if (TARGET_XCVSIMD && !TARGET_VECTOR && !TARGET_64BIT && (vmode == V4QImode || vmode == V2HImode) && vmode == op_mode)
+    return riscv_cv_simd_vec_perm_const (vmode, target, op0, op1, sel);
 
   return false;
 }
@@ -11328,10 +11424,13 @@ extract_base_offset_in_addr (rtx mem, rtx *base, rtx *offset)
 /* Implements target hook vector_mode_supported_any_target_p.  */
 
 static bool
-riscv_vector_mode_supported_any_target_p (machine_mode)
+riscv_vector_mode_supported_any_target_p (machine_mode mode)
 {
   if (TARGET_XTHEADVECTOR)
     return false;
+
+  if (TARGET_XCVSIMD && !TARGET_VECTOR)
+    return riscv_vector_mode_supported_p (mode);
   return true;
 }
 
