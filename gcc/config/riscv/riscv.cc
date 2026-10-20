@@ -11215,6 +11215,34 @@ riscv_cv_simd_vec_perm_const (machine_mode vmode, rtx target, rtx op0, rtx op1, 
   return true;
 }
 
+/* Complex multiplication of V2HI values, wrapping at 16 bits. 
+For the cmul/cmul_conj optabs:
+a*b: re = dotsp (a, conj b) im = dotsp (a, swap b)
+a*conj b: re = dotsp (a,b) im = dotsp (a, j*b)
+cv.pack then puts re in lane 0 and im in lane 1 */
+void
+riscv_expand_cv_simd_cmul (rtx target, rtx a, rtx b, bool conj) {
+  rtx as = gen_lowpart (SImode, force_reg (V2HImode, a));
+  b = force_reg (V2HImode, b);
+  rtx t = gen_lowpart (SImode, b);
+  rtx u = gen_reg_rtx (V2HImode);
+  rtx re = gen_reg_rtx (SImode), im = gen_reg_rtx (SImode);
+  rtx r = gen_reg_rtx (SImode);
+
+  if (conj)
+    emit_insn (gen_cv_simd_mulj_v2hi (u, b));
+  else {
+    t = gen_reg_rtx (SImode);
+    emit_insn (gen_riscv_cv_simd_cplxconj_si (t, gen_lowpart (SImode, b)));
+    rtx swap = gen_rtx_PARALLEL (VOIDmode, gen_rtvec (2, const1_rtx, const0_rtx));
+    emit_insn (gen_rtx_SET (u, gen_rtx_VEC_SELECT (V2HImode, b, swap)));
+  }
+  emit_insn (gen_riscv_cv_simd_dotsp_h_si (re, as, t));
+  emit_insn (gen_riscv_cv_simd_dotsp_h_si (im, as, gen_lowpart (SImode, u)));
+  emit_insn (gen_riscv_cv_simd_packlo_h_si (r, im, re));
+  emit_move_insn (target, gen_lowpart (V2HImode, r));
+}
+
 
 /* vec_init for XCVSIMD V4QI/V2HI */
 

@@ -180,6 +180,7 @@ extern void riscv_expand_cv_simd_dot (rtx *, machine_mode, enum riscv_cv_dot_kin
 extern void riscv_expand_cv_simd_vec_set_var (rtx, rtx, rtx);
 extern void riscv_expand_cv_simd_vec_init (rtx, rtx);
 extern void riscv_expand_cv_simd_vec_perm (rtx, rtx, rtx, rtx);
+extern void riscv_expand_cv_simd_cmul (rtx, rtx, rtx, bool);
 
 /* Routines implemented in riscv-c.cc.  */
 void riscv_cpu_cpp_builtins (cpp_reader *);

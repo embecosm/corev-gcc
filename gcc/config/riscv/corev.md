@@ -3726,6 +3726,69 @@
 	[(set_attr "type" "arith")
 	(set_attr "mode" "SI")])
 
+;;j * b = (-b.im, b.re): cv.subrotmj with rs1 = x0
+(define_insn "cv_simd_mulj_v2hi"
+	[(set (match_operand:V2HI 0 "register_operand" "=r")
+		(vec_concat:V2HI
+		(neg:HI (vec_select:HI (match_operand:V2HI 1 "register_operand" "r")
+		(parallel [(const_int 1)])))
+		(vec_select:HI (match_dup 1) (parallel [(const_int 0)]))))]
+	"TARGET_XCVSIMD && !TARGET_64BIT"
+	"cv.subrotmj\t%0,zero,%1"
+	[(set_attr "type" "arith")
+	(set_attr "mode" "SI")])
+
+;;complex add with rotation
+;;cadd90: c = a + j*b -> cv.subrotmj t,zero,b, cv.add.h c,a,t
+(define_expand "cadd90v2hi3"
+	[(match_operand:V2HI 0 "register_operand")
+		(match_operand:V2HI 1 "register_operand")
+		(match_operand:V2HI 2 "register_operand")]
+	"TARGET_XCVSIMD && !TARGET_VECTOR && !TARGET_64BIT"
+	{
+		rtx t = gen_reg_rtx (V2HImode);
+		emit_insn (gen_cv_simd_mulj_v2hi (t, operands[2]));
+		emit_insn (gen_rtx_SET (operands[0],
+		gen_rtx_PLUS (V2HImode, operands[1], t)));
+	DONE;
+})
+
+;;cadd270: c = a - j*b -> cv.subrotmj t,zero,b, cv.sub.h c,a,t
+(define_expand "cadd270v2hi3"
+	[(match_operand:V2HI 0 "register_operand")
+		(match_operand:V2HI 1 "register_operand")
+		(match_operand:V2HI 2 "register_operand")]
+	"TARGET_XCVSIMD && !TARGET_VECTOR && !TARGET_64BIT"
+	{
+		rtx t = gen_reg_rtx (V2HImode);
+		emit_insn (gen_cv_simd_mulj_v2hi (t, operands[2]));
+		emit_insn (gen_rtx_SET (operands[0],
+		gen_rtx_MINUS (V2HImode, operands[1], t)));
+	DONE;
+})
+
+
+;; complex multiplication, wrapping at 16 bits
+(define_expand "cmulv2hi3"
+	[(match_operand:V2HI 0 "register_operand")
+		(match_operand:V2HI 1 "register_operand")
+		(match_operand:V2HI 2 "register_operand")]
+	"TARGET_XCVSIMD && !TARGET_VECTOR && !TARGET_64BIT"
+	{
+		riscv_expand_cv_simd_cmul (operands[0], operands[1], operands[2], false);
+		DONE;
+	})
+
+(define_expand "cmul_conjv2hi3"
+	[(match_operand:V2HI 0 "register_operand")
+		(match_operand:V2HI 1 "register_operand")
+		(match_operand:V2HI 2 "register_operand")]
+	"TARGET_XCVSIMD && !TARGET_VECTOR && !TARGET_64BIT"
+	{
+		riscv_expand_cv_simd_cmul (operands[0], operands[1], operands[2], true);
+		DONE;
+	})
+
 ;; XCVBI Instructions
 (define_insn "*cv_branch<mode>"
   [(set (pc)
