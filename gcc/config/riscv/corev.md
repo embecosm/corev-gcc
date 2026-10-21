@@ -3789,6 +3789,79 @@
 		DONE;
 	})
 
+;; -j * a = (a.im, -a.re): cv.subrotmj with rs2 = x0
+(define_insn "cv_simd_mulnegj_v2hi"
+  	[(set (match_operand:V2HI 0 "register_operand" "=r")
+		(vec_concat:V2HI
+	  		(vec_select:HI (match_operand:V2HI 1 "register_operand" "r")
+			 	(parallel [(const_int 1)]))
+	  		(neg:HI (vec_select:HI (match_dup 1) (parallel [(const_int 0)])))))]
+  	"TARGET_XCVSIMD && !TARGET_64BIT"
+  	"cv.subrotmj\t%0,%1,zero"
+  	[(set_attr "type" "arith")
+   	(set_attr "mode" "SI")])
+
+;;Scaled complex add-rotate, (a +/- j*b) >> k for k = 1..3.  
+;;Combine merges cadd90/cadd270 + the shift;
+;;after reload this splits into two instructions
+;;	(a + j*b) >> k = subrotmj.div(2^k) (j*a, b)
+;;	(a - j*b) >> k = subrotmj.div(2^k) (b, -j*a)
+(define_insn_and_split "*cv_simd_cadd90_div"
+  	[(set (match_operand:V2HI 0 "register_operand" "=r")
+		(ashiftrt:V2HI
+	  		(plus:V2HI
+	    		(vec_concat:V2HI
+	      			(neg:HI (vec_select:HI
+						(match_operand:V2HI 2 "register_operand" "r")
+						(parallel [(const_int 1)])))
+	      			(vec_select:HI (match_dup 2) (parallel [(const_int 0)])))
+	    		(match_operand:V2HI 1 "register_operand" "r"))
+	  		(match_operand 4 "const_int_operand" "n")))
+   		(clobber (match_scratch:V2HI 3 "=&r"))]
+  	"TARGET_XCVSIMD && !TARGET_64BIT && IN_RANGE (INTVAL (operands[4]), 1, 3)"
+  	"#"
+  	"&& reload_completed"
+  	[(const_int 0)]
+	{
+  		emit_insn (gen_cv_simd_mulj_v2hi (operands[3], operands[1]));
+  		emit_insn (gen_riscv_cv_simd_subrotmj_si (gen_lowpart (SImode, operands[0]),
+			gen_lowpart (SImode, operands[3]),
+			gen_lowpart (SImode, operands[2]),
+			operands[4]));
+  	DONE;
+}
+	[(set_attr "type" "arith")
+   	(set_attr "mode" "SI")])
+
+(define_insn_and_split "*cv_simd_cadd270_div"
+  	[(set (match_operand:V2HI 0 "register_operand" "=r")
+		(ashiftrt:V2HI
+	  		(minus:V2HI
+	    		(match_operand:V2HI 1 "register_operand" "r")
+	    		(vec_concat:V2HI
+	      			(neg:HI (vec_select:HI
+						(match_operand:V2HI 2 "register_operand" "r")
+						(parallel [(const_int 1)])))
+	      			(vec_select:HI (match_dup 2) (parallel [(const_int 0)]))))
+	  			(match_operand 4 "const_int_operand" "n")))
+   			(clobber (match_scratch:V2HI 3 "=&r"))]
+  	"TARGET_XCVSIMD && !TARGET_64BIT && IN_RANGE (INTVAL (operands[4]), 1, 3)"
+  	"#"
+  	"&& reload_completed"
+  	[(const_int 0)]
+	{
+  	emit_insn (gen_cv_simd_mulnegj_v2hi (operands[3], operands[1]));
+  	emit_insn (gen_riscv_cv_simd_subrotmj_si (gen_lowpart (SImode, operands[0]),
+		gen_lowpart (SImode, operands[2]),
+		gen_lowpart (SImode, operands[3]),
+		operands[4]));
+  	DONE;
+}
+	[(set_attr "type" "arith")
+   	(set_attr "mode" "SI")])
+
+
+
 ;; XCVBI Instructions
 (define_insn "*cv_branch<mode>"
   [(set (pc)
