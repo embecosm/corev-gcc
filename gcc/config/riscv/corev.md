@@ -1228,12 +1228,14 @@
 	(set_attr "mode" "SI")])
 
 
+;; Builtin-only: an unspec so it cannot be confused with
+;; riscv_cv_add_div2v2hi, which has the same (a + b) >> 1 RTL and is used
+;; by combine for auto-generated code.
 (define_insn "riscv_cv_avgv2hi"
   	[(set (match_operand:V2HI 0 "register_operand" "=r")
-        (ashiftrt:V2HI
-          	(plus:V2HI (match_operand:V2HI 1 "register_operand" "r")
-                (match_operand:V2HI 2 "register_operand" "r"))
-          	(const_int 1)))]
+		(unspec:V2HI [(match_operand:V2HI 1 "register_operand" "r")
+		    (match_operand:V2HI 2 "register_operand" "r")]
+		     	UNSPEC_CV_AVG_H))]
   	"TARGET_XCVSIMD && !TARGET_64BIT"
   	"cv.avg.h\t%0,%1,%2"
   	[(set_attr "type" "arith")
