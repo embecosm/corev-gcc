@@ -11279,15 +11279,39 @@ riscv_expand_cv_simd_vec_init (rtx target, rtx vals) {
 
 static bool
 riscv_vectorize_vec_perm_const (machine_mode vmode, machine_mode op_mode,
-				rtx target, rtx op0, rtx op1,
-				const vec_perm_indices &sel)
+    rtx target, rtx op0, rtx op1,
+  const vec_perm_indices &sel)
 {
   if (TARGET_VECTOR && riscv_v_ext_mode_p (vmode))
     return riscv_vector::expand_vec_perm_const (vmode, op_mode, target, op0,
-						op1, sel);
+      op1, sel);
 
-  if (TARGET_XCVSIMD && !TARGET_VECTOR && !TARGET_64BIT && (vmode == V4QImode || vmode == V2HImode) && vmode == op_mode)
-    return riscv_cv_simd_vec_perm_const (vmode, target, op0, op1, sel);
+  /* XCVSIMD V2HI: indices 0,1 = op0's lanes, 2,3 = op1's lanes. */
+  if (TARGET_XCVSIMD && vmode == V2HImode && op_mode == V2HImode)
+  {
+    int i0 = sel[0].to_constant (), i1 = sel[1].to_constant ();
+    bool swap = i0 >= 2; /* Lane 0 from op1: swap inputs. */
+    if (swap)
+      i0 ^= 2, i1 ^= 2;
+    /* Now lane 0 is from a; lane 1 must be from b, and not crossed. */
+    if (i1 < 2 || (i0 == 1 && i1 == 2))
+      return false; /* Fall back to vec_perm. */
+    if (!target)
+      return true; /* Query only. */
+
+    rtx a = force_reg (V2HImode, swap ? op1 : op0);
+    rtx b = force_reg (V2HImode, swap ? op0 : op1);
+    if (i1 - 2 != i0) /* {a0, b1}: blend. */
+      emit_insn (gen_cv_simd_blend_v2hi (target, a, b));
+    else /* {a0, b0} or {a1, b1}: cv.pack(.h). */
+    {
+      rtx d = gen_lowpart (SImode, target);
+      rtx sa = gen_lowpart (SImode, a), sb = gen_lowpart (SImode, b);
+      emit_insn (i0 == 0 ? gen_riscv_cv_simd_packlo_h_si (d, sb, sa)
+        : gen_riscv_cv_simd_packhi_h_si (d, sb, sa));
+    }
+  return true;
+  }
 
   return false;
 }

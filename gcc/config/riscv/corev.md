@@ -3770,7 +3770,7 @@
 })
 
 
-;; complex multiplication, wrapping at 16 bits
+;; complex multiplication, a * b -> cv.cplxconj, 2x cv.dotsp, cv.pack
 (define_expand "cmulv2hi3"
 	[(match_operand:V2HI 0 "register_operand")
 		(match_operand:V2HI 1 "register_operand")
@@ -3781,6 +3781,53 @@
 		DONE;
 	})
 
+;; vec_addsub (a, b) = { a.re - b.re, a.im + b.im } = a - conj (b)
+(define_expand "vec_addsubv2hi3"
+  	[(match_operand:V2HI 0 "register_operand")
+   		(match_operand:V2HI 1 "register_operand")
+   		(match_operand:V2HI 2 "register_operand")]
+  	"TARGET_XCVSIMD && !TARGET_VECTOR"
+	{
+  		rtx t = gen_reg_rtx (SImode);
+  		emit_insn (gen_riscv_cv_simd_cplxconj_si (t, gen_lowpart (SImode, operands[2])));
+  		emit_insn (gen_riscv_cv_subv2hi (operands[0], operands[1],
+            gen_lowpart (V2HImode, t)));
+  		DONE;
+	})
+
+;; Blend: lane 0 from op1, lane 1 from op2 (vec_merge mask bit set = op1).
+(define_insn "cv_simd_blend_v2hi"
+  	[(set (match_operand:V2HI 0 "register_operand" "=r")
+        (vec_merge:V2HI (match_operand:V2HI 1 "register_operand" "r")
+         	(match_operand:V2HI 2 "register_operand" "0")
+            (const_int 1)))]
+  	"TARGET_XCVSIMD && !TARGET_VECTOR"
+  	"cv.insert.h\t%0,%1,0"
+  	[(set_attr "type" "arith")
+   	(set_attr "mode" "SI")])
+
+;; a + conj (b) = { a.re + b.re, a.im - b.im }.
+(define_insn_and_split "*cv_simd_add_conj"
+  	[(set (match_operand:V2HI 0 "register_operand" "=r")
+        (vec_merge:V2HI
+          	(plus:V2HI (match_operand:V2HI 1 "register_operand" "r")
+                (match_operand:V2HI 2 "register_operand" "r"))
+          	(minus:V2HI (match_dup 1) (match_dup 2))
+          	(const_int 1)))
+   	(clobber (match_scratch:V2HI 3 "=&r"))]
+  	"TARGET_XCVSIMD && !TARGET_VECTOR"
+  	"#"
+  	"&& reload_completed"
+  	[(const_int 0)]
+{
+  	emit_insn (gen_riscv_cv_simd_cplxconj_si (gen_lowpart (SImode, operands[3]), gen_lowpart (SImode, operands[2])));
+  	emit_insn (gen_riscv_cv_addv2hi (operands[0], operands[1], operands[3]));
+  	DONE;
+}
+  [(set_attr "type" "arith")
+   (set_attr "mode" "SI")])
+
+;; a * conj(b) -> cv.subrotmj, 2x cv.dotsp.h, cv.pack
 (define_expand "cmul_conjv2hi3"
 	[(match_operand:V2HI 0 "register_operand")
 		(match_operand:V2HI 1 "register_operand")

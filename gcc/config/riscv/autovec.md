@@ -1261,11 +1261,25 @@
   [(set (match_operand:V_VLSI 0 "register_operand")
     (any_int_unop:V_VLSI
      (match_operand:V_VLSI 1 "register_operand")))]
-  "TARGET_VECTOR && can_create_pseudo_p ()"
+  "(TARGET_VECTOR && can_create_pseudo_p ())
+   || (TARGET_XCVSIMD && !TARGET_VECTOR
+       && (<MODE>mode == V4QImode || <MODE>mode == V2HImode))"
   "#"
   "&& 1"
   [(const_int 0)]
 {
+  if (!TARGET_VECTOR)
+    {
+      rtx d = gen_lowpart (SImode, operands[0]);
+      rtx s = gen_lowpart (SImode, operands[1]);
+      if (<CODE> == NOT)
+        emit_insn (gen_one_cmplsi2 (d, s));
+      else if (<MODE>mode == V4QImode)
+        emit_insn (gen_riscv_cv_simd_neg_b_si (d, s));
+      else
+        emit_insn (gen_riscv_cv_simd_neg_h_si (d, s));
+      DONE;
+    }
   insn_code icode = code_for_pred (<CODE>, <MODE>mode);
   riscv_vector::emit_vlmax_insn (icode, riscv_vector::UNARY_OP, operands);
   DONE;
